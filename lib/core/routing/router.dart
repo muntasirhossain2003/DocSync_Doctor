@@ -4,12 +4,14 @@ import '../../features/auth/presentation/pages/log_in.dart';
 import '../../features/auth/presentation/pages/register.dart';
 //import '../pages/dashboard_page.dart';
 import '../../features/auth/presentation/provider/auth_provider.dart';
+import '../../shared/widgets/splash_screen.dart';
+
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/splash',
     routes: [
       GoRoute(
         path: '/login',
@@ -18,6 +20,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
       ),
     ],
   );
