@@ -5,13 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/log_in.dart';
 import '../../features/auth/presentation/pages/register.dart';
 import '../../features/auth/presentation/pages/reset_password.dart';
-//import '../pages/dashboard_page.dart';
-import '../../features/auth/presentation/provider/auth_provider.dart';
+import '../../features/doctor/presentation/pages/doctor_dashboard_page.dart';
+import '../../features/doctor/presentation/pages/doctor_main_scaffold.dart';
+import '../../features/doctor/presentation/pages/edit_doctor_profile_page.dart';
 import '../../shared/widgets/splash_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
   return GoRouter(
     initialLocation: '/splash',
     // Override URL path strategy to handle password reset links with hash fragments
@@ -40,6 +39,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reset_password',
         builder: (context, state) => const ResetPasswordPage(),
+      ),
+      // Doctor routes
+      GoRoute(
+        path: '/doctor/home',
+        builder: (context, state) => const DoctorMainScaffold(),
+      ),
+      GoRoute(
+        path: '/doctor/dashboard',
+        builder: (context, state) => const DoctorDashboardPage(),
+      ),
+      GoRoute(
+        path: '/doctor/profile/edit',
+        builder: (context, state) => const EditDoctorProfilePage(),
       ),
     ],
   );
