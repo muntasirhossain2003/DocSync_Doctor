@@ -20,10 +20,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final passwordController = TextEditingController();
   final phoneController = TextEditingController();
   final dobController = TextEditingController();
-  final bmdcController = TextEditingController();
-  final specializationController = TextEditingController();
-  final qualificationController = TextEditingController();
-  final consultationFeeController = TextEditingController();
 
   String role = 'doctor';
   String? gender;
@@ -87,35 +83,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
       print('✅ User record verified: $verifyUser');
 
-      // Step 5: Create doctor record with basic information
-      print('🔵 Creating doctor record...');
-
-      final userId = verifyUser['id'] as String;
-
-      final doctorInsert = await supabase.from('doctors').insert({
-        'user_id': userId,
-        'bmcd_registration_number': bmdcController.text.trim(),
-        'specialization': specializationController.text.trim().isEmpty
-            ? null
-            : specializationController.text.trim(),
-        'qualification': qualificationController.text.trim().isEmpty
-            ? null
-            : qualificationController.text.trim(),
-        'consultation_fee':
-            double.tryParse(consultationFeeController.text.trim()) ?? 0.0,
-        'is_available': false,
-        'is_online': false,
-      }).select();
-
-      print('✅ Doctor record created: $doctorInsert');
+      // Note: Doctor profile will be completed later through the app
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Registration successful! Please log in.'),
+          content: Text(
+            'Registration successful! Please complete your profile after login.',
+          ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
+          duration: Duration(seconds: 4),
         ),
       );
 
@@ -294,57 +272,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   validator: (v) => v == null || v.isEmpty
                       ? 'Please select your date of birth'
                       : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Professional Information Section
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    'Professional Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.blue,
-                    ),
-                  ),
-                ),
-
-                // BMDC Registration Number
-                _buildInputField(
-                  controller: bmdcController,
-                  label: 'BMDC Registration Number',
-                  icon: Icons.badge_outlined,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Specialization
-                _buildInputField(
-                  controller: specializationController,
-                  label: 'Specialization (Optional)',
-                  icon: Icons.medical_services_outlined,
-                ),
-                const SizedBox(height: 16),
-
-                // Qualification
-                _buildInputField(
-                  controller: qualificationController,
-                  label: 'Qualification (Optional)',
-                  icon: Icons.school_outlined,
-                ),
-                const SizedBox(height: 16),
-
-                // Consultation Fee
-                _buildInputField(
-                  controller: consultationFeeController,
-                  label: 'Consultation Fee (৳)',
-                  icon: Icons.attach_money,
-                  validator: (v) {
-                    if (v!.isEmpty) return 'Required';
-                    if (double.tryParse(v) == null) return 'Enter valid number';
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 25),
 
