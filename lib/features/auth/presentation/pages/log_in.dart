@@ -39,7 +39,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
 
       if (response.user != null) {
-        context.go('/home');
+        context.go('/doctor/home');
       }
     } on AuthException catch (e) {
       if (!mounted) return;
