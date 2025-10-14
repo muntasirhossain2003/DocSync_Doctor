@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../provider/auth_provider.dart';
+
 import '../../../../core/theme/theme.dart';
+import '../provider/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -42,8 +43,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     } on AuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -54,58 +56,56 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final email = emailController.text.trim();
 
     if (email.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Please enter your email'),
-      backgroundColor: Colors.red, // optional for error
-    ),
-  );
-  return;
-}
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-setState(() => sendingReset = true);
+    setState(() => sendingReset = true);
 
-  try {
-    final redirectUrl = kIsWeb
-        ? 'http://${Uri.base.host}:${Uri.base.port}/reset_password'
-        : 'myapp://reset_password'; // mobile deep link
+    try {
+      final redirectUrl = kIsWeb
+          ? 'http://${Uri.base.host}:${Uri.base.port}/reset_password'
+          : 'myapp://reset_password';
 
-    await supabase.auth.resetPasswordForEmail(
-      email,
-      redirectTo: redirectUrl,
-    );
+      // Use OTP (Magic Link) instead of PKCE for better cross-browser support
+      await supabase.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: false, // Don't create new users
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password reset link sent to your email'),
-        backgroundColor: Colors.green, // optional for success
-      ),
-    );
-  } on AuthException catch (e) {
-    if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Magic link sent! Click the link in your email to reset password. Works in any browser.',
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } catch (e) {
-    if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.toString()),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
-    if (mounted) setState(() => sendingReset = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => sendingReset = false);
+    }
   }
-  }
-
 
   @override
   Widget build(BuildContext context) {
