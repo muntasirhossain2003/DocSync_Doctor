@@ -29,6 +29,17 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
   late TextEditingController _bioController;
   late TextEditingController _experienceController;
 
+  // Availability schedule state
+  Map<String, Map<String, dynamic>> _availabilitySchedule = {
+    'monday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'tuesday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'wednesday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'thursday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'friday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'saturday': {'start': '09:00', 'end': '13:00', 'available': true},
+    'sunday': {'start': '00:00', 'end': '00:00', 'available': false},
+  };
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +67,18 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
           _consultationFeeController.text = doctor.consultationFee.toString();
           _bioController.text = doctor.bio ?? '';
           _experienceController.text = doctor.experience?.toString() ?? '';
+
+          // Load availability schedule if exists
+          if (doctor.availability != null && doctor.availability!.isNotEmpty) {
+            setState(() {
+              _availabilitySchedule = Map<String, Map<String, dynamic>>.from(
+                doctor.availability!.map(
+                  (key, value) =>
+                      MapEntry(key, Map<String, dynamic>.from(value as Map)),
+                ),
+              );
+            });
+          }
         } else {
           // Load user data from users table
           _loadUserData();
@@ -129,6 +152,7 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
               ? null
               : _bioController.text.trim(),
           experience: int.tryParse(_experienceController.text),
+          availability: _availabilitySchedule,
         );
 
         final success = await ref
@@ -171,6 +195,7 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
               ? null
               : _bioController.text.trim(),
           experience: int.tryParse(_experienceController.text),
+          availability: _availabilitySchedule,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -410,6 +435,21 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Availability Schedule Section
+              Text('Availability Schedule', style: AppTextStyles.h3),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Set your available hours for each day',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              ..._buildAvailabilitySchedule(),
+
               const SizedBox(height: AppSpacing.xl),
 
               // Save button
@@ -435,5 +475,137 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
         ),
       ),
     );
+  }
+
+  /// Build availability schedule widgets
+  List<Widget> _buildAvailabilitySchedule() {
+    final days = [
+      {'key': 'monday', 'label': 'Monday'},
+      {'key': 'tuesday', 'label': 'Tuesday'},
+      {'key': 'wednesday', 'label': 'Wednesday'},
+      {'key': 'thursday', 'label': 'Thursday'},
+      {'key': 'friday', 'label': 'Friday'},
+      {'key': 'saturday', 'label': 'Saturday'},
+      {'key': 'sunday', 'label': 'Sunday'},
+    ];
+
+    return days.map((day) {
+      final dayKey = day['key'] as String;
+      final dayLabel = day['label'] as String;
+      final daySchedule = _availabilitySchedule[dayKey]!;
+      final isAvailable = daySchedule['available'] as bool;
+
+      return Card(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      dayLabel,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    isAvailable ? 'Available' : 'Closed',
+                    style: TextStyle(
+                      color: isAvailable ? AppColors.success : AppColors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Switch(
+                    value: isAvailable,
+                    onChanged: (value) {
+                      setState(() {
+                        _availabilitySchedule[dayKey]!['available'] = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              if (isAvailable) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(dayKey, 'start'),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Start Time',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                          ),
+                          child: Text(
+                            daySchedule['start'] as String,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(dayKey, 'end'),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'End Time',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                          ),
+                          child: Text(
+                            daySchedule['end'] as String,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  /// Select time for availability
+  Future<void> _selectTime(String dayKey, String timeType) async {
+    final currentTime = _availabilitySchedule[dayKey]![timeType] as String;
+    final timeParts = currentTime.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.parse(timeParts[0]),
+      minute: int.parse(timeParts[1]),
+    );
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _availabilitySchedule[dayKey]![timeType] =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
   }
 }

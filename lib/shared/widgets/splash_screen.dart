@@ -60,7 +60,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       body: Center(
         child: FadeTransition(
           opacity: _animation,
-          child: Image.asset('../../assets/logo.png', width: 512, height: 512),
+          child: Image.asset('assets/logo.png', width: 512, height: 512),
         ),
       ),
     );
