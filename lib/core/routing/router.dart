@@ -8,6 +8,7 @@ import '../../features/auth/presentation/pages/reset_password.dart';
 import '../../features/doctor/presentation/pages/doctor_dashboard_page.dart';
 import '../../features/doctor/presentation/pages/doctor_main_scaffold.dart';
 import '../../features/doctor/presentation/pages/edit_doctor_profile_page.dart';
+import '../../features/video_call/presentation/pages/video_call_page.dart';
 import '../../shared/widgets/splash_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -52,6 +53,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/doctor/profile/edit',
         builder: (context, state) => const EditDoctorProfilePage(),
+      ),
+      // Video call route
+      GoRoute(
+        path: '/video-call/:consultationId',
+        builder: (context, state) {
+          final consultationId = state.pathParameters['consultationId'] ?? '';
+          final extra = state.extra as Map<String, dynamic>?;
+          return VideoCallPage(
+            consultationId: consultationId,
+            patientId: extra?['patientId'],
+            patientName: extra?['patientName'],
+            patientImageUrl: extra?['patientImageUrl'],
+          );
+        },
       ),
     ],
   );

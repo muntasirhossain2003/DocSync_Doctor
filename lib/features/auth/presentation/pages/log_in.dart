@@ -120,7 +120,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               SizedBox(
                 height: 180,
                 child: Image.asset(
-                  '../../../../../assets/login_logo.png',
+                  'assets/login_logo.png',
                   fit: BoxFit.contain,
                 ),
               ),

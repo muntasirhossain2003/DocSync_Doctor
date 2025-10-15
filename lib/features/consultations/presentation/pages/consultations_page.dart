@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../doctor/presentation/providers/doctor_profile_provider.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_theme.dart';
+import '../../../doctor/presentation/providers/doctor_profile_provider.dart';
 
 class ConsultationsPage extends ConsumerStatefulWidget {
   const ConsultationsPage({super.key});
@@ -22,10 +24,10 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
     // Load consultations after first frame when doctor is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final doctor = ref.read(doctorProfileProvider).value;
-      if (doctor?.id != null) {
-        ref.read(upcomingConsultationsProvider.notifier).load(doctor!.id);
-        ref.read(completedConsultationsProvider.notifier).load(doctor!.id);
-        ref.read(cancelledConsultationsProvider.notifier).load(doctor!.id);
+      if (doctor != null) {
+        ref.read(upcomingConsultationsProvider.notifier).load(doctor.id);
+        ref.read(completedConsultationsProvider.notifier).load(doctor.id);
+        ref.read(cancelledConsultationsProvider.notifier).load(doctor.id);
       }
     });
   }
@@ -96,8 +98,8 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                         status == 'upcoming'
                             ? Icons.schedule
                             : status == 'completed'
-                                ? Icons.check_circle_outline
-                                : Icons.cancel_outlined,
+                            ? Icons.check_circle_outline
+                            : Icons.cancel_outlined,
                         size: 80,
                         color: Colors.grey[400],
                       ),
@@ -119,13 +121,19 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                 if (doctor?.id != null) {
                   switch (status) {
                     case 'upcoming':
-                      await ref.read(upcomingConsultationsProvider.notifier).load(doctor!.id);
+                      await ref
+                          .read(upcomingConsultationsProvider.notifier)
+                          .load(doctor!.id);
                       break;
                     case 'completed':
-                      await ref.read(completedConsultationsProvider.notifier).load(doctor!.id);
+                      await ref
+                          .read(completedConsultationsProvider.notifier)
+                          .load(doctor!.id);
                       break;
                     case 'cancelled':
-                      await ref.read(cancelledConsultationsProvider.notifier).load(doctor!.id);
+                      await ref
+                          .read(cancelledConsultationsProvider.notifier)
+                          .load(doctor!.id);
                       break;
                   }
                 }
@@ -133,16 +141,21 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
               child: ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 itemCount: consultations.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.md),
                 itemBuilder: (context, index) {
                   final consultation = consultations[index];
                   final patient = consultation['patient'];
-                  final dateTime = DateTime.parse(consultation['scheduled_time']);
+                  final dateTime = DateTime.parse(
+                    consultation['scheduled_time'],
+                  );
                   final formattedTime =
                       '${dateTime.day}/${dateTime.month} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
 
                   return Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 2,
                     child: ListTile(
                       leading: CircleAvatar(
@@ -152,16 +165,53 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                         child: patient['profile_picture_url'] == null
                             ? Text(
                                 patient['full_name'][0].toUpperCase(),
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               )
                             : null,
                       ),
                       title: Text(patient['full_name']),
-                      subtitle: Text('Time: $formattedTime\n'
-                          'Status: ${consultation['consultation_status']}'),
-                      trailing: const Icon(Icons.arrow_forward_ios),
+                      subtitle: Text(
+                        'Time: $formattedTime\n'
+                        'Type: ${consultation['consultation_type']}\n'
+                        'Status: ${consultation['consultation_status']}',
+                      ),
+                      trailing:
+                          status == 'upcoming' &&
+                              consultation['consultation_type'] == 'video'
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.video_call,
+                                color: AppColors.primary,
+                              ),
+                              onPressed: () {
+                                context.push(
+                                  '/video-call/${consultation['id']}',
+                                  extra: {
+                                    'patientId': patient['id'],
+                                    'patientName': patient['full_name'],
+                                    'patientImageUrl':
+                                        patient['profile_picture_url'],
+                                  },
+                                );
+                              },
+                              tooltip: 'Join Video Call',
+                            )
+                          : const Icon(Icons.arrow_forward_ios),
                       onTap: () {
-                        // TODO: Navigate to consultation details
+                        // Navigate to consultation details
+                        if (consultation['consultation_type'] == 'video' &&
+                            status == 'upcoming') {
+                          context.push(
+                            '/video-call/${consultation['id']}',
+                            extra: {
+                              'patientId': patient['id'],
+                              'patientName': patient['full_name'],
+                              'patientImageUrl': patient['profile_picture_url'],
+                            },
+                          );
+                        }
                       },
                     ),
                   );

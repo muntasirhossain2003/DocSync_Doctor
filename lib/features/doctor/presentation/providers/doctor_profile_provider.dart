@@ -85,9 +85,47 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 
     result.fold(
       (error) => state = AsyncValue.error(error, StackTrace.current),
-      (doctor) => state = AsyncValue.data(doctor),
+      (doctor) {
+        state = AsyncValue.data(doctor);
+
+        // Automatically set doctor online when they load their profile (login)
+        if (doctor != null && !doctor.isOnline) {
+          updateOnlineStatus(doctor.id, true).then((result) {
+            result.fold(
+              (error) => print('Failed to set online status: $error'),
+              (success) {
+                if (success && mounted) {
+                  state = AsyncValue.data(doctor.copyWith(isOnline: true));
+                }
+              },
+            );
+          });
+        }
+
+        // Also set availability to true if doctor has availability hours
+        if (doctor != null && doctor.hasAvailability && !doctor.isAvailable) {
+          updateAvailability(doctor.id, true).then((result) {
+            result.fold(
+              (error) => print('Failed to set availability: $error'),
+              (success) {
+                if (success && mounted) {
+                  final currentState = state.value;
+                  if (currentState != null) {
+                    state = AsyncValue.data(
+                      currentState.copyWith(isAvailable: true),
+                    );
+                  }
+                }
+              },
+            );
+          });
+        }
+      },
     );
   }
+
+  // Helper to check if still mounted
+  bool get mounted => state != const AsyncValue.loading();
 
   /// Update doctor profile
   Future<bool> updateProfile(Doctor doctor) async {
@@ -169,45 +207,45 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 // Doctor profile state notifier provider
 final doctorProfileProvider =
     StateNotifierProvider<DoctorProfileNotifier, AsyncValue<Doctor?>>((ref) {
-  return DoctorProfileNotifier(
-    getDoctorProfileByAuthId: ref.watch(
-      getDoctorProfileByAuthIdUseCaseProvider,
-    ),
-    updateDoctorProfile: ref.watch(updateDoctorProfileUseCaseProvider),
-    completeDoctorProfile: ref.watch(completeDoctorProfileUseCaseProvider),
-    updateAvailability: ref.watch(updateAvailabilityUseCaseProvider),
-    updateOnlineStatus: ref.watch(updateOnlineStatusUseCaseProvider),
-  );
-});
-
+      return DoctorProfileNotifier(
+        getDoctorProfileByAuthId: ref.watch(
+          getDoctorProfileByAuthIdUseCaseProvider,
+        ),
+        updateDoctorProfile: ref.watch(updateDoctorProfileUseCaseProvider),
+        completeDoctorProfile: ref.watch(completeDoctorProfileUseCaseProvider),
+        updateAvailability: ref.watch(updateAvailabilityUseCaseProvider),
+        updateOnlineStatus: ref.watch(updateOnlineStatusUseCaseProvider),
+      );
+    });
 
 class UpcomingConsultationsNotifier
     extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
   final GetUpcomingConsultations getUpcomingConsultations;
 
   UpcomingConsultationsNotifier({required this.getUpcomingConsultations})
-      : super(const AsyncValue.loading());
+    : super(const AsyncValue.loading());
 
   Future<void> load(String doctorId) async {
-  state = const AsyncValue.loading();
+    state = const AsyncValue.loading();
 
-  try {
-    final consultations = await getUpcomingConsultations(doctorId);
-    state = AsyncValue.data(consultations);
-  } catch (e, st) {
-    state = AsyncValue.error(e.toString(), st);
+    try {
+      final consultations = await getUpcomingConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      state = AsyncValue.error(e.toString(), st);
+    }
   }
 }
 
-}
-
 // Provider for upcoming consultations
-final upcomingConsultationsProvider = StateNotifierProvider<
-    UpcomingConsultationsNotifier,
-    AsyncValue<List<Map<String, dynamic>>>>((ref) {
-  final useCase = ref.watch(getUpcomingConsultationsUseCaseProvider);
-  return UpcomingConsultationsNotifier(getUpcomingConsultations: useCase);
-});
+final upcomingConsultationsProvider =
+    StateNotifierProvider<
+      UpcomingConsultationsNotifier,
+      AsyncValue<List<Map<String, dynamic>>>
+    >((ref) {
+      final useCase = ref.watch(getUpcomingConsultationsUseCaseProvider);
+      return UpcomingConsultationsNotifier(getUpcomingConsultations: useCase);
+    });
 
 // Use cases for completed and cancelled consultations
 final getCompletedConsultationsUseCaseProvider = Provider((ref) {
@@ -226,7 +264,7 @@ class CompletedConsultationsNotifier
   final GetCompletedConsultations getCompletedConsultations;
 
   CompletedConsultationsNotifier({required this.getCompletedConsultations})
-      : super(const AsyncValue.loading());
+    : super(const AsyncValue.loading());
 
   Future<void> load(String doctorId) async {
     state = const AsyncValue.loading();
@@ -246,7 +284,7 @@ class CancelledConsultationsNotifier
   final GetCancelledConsultations getCancelledConsultations;
 
   CancelledConsultationsNotifier({required this.getCancelledConsultations})
-      : super(const AsyncValue.loading());
+    : super(const AsyncValue.loading());
 
   Future<void> load(String doctorId) async {
     state = const AsyncValue.loading();
@@ -261,16 +299,20 @@ class CancelledConsultationsNotifier
 }
 
 // Providers
-final completedConsultationsProvider = StateNotifierProvider<
-    CompletedConsultationsNotifier,
-    AsyncValue<List<Map<String, dynamic>>>>((ref) {
-  final useCase = ref.watch(getCompletedConsultationsUseCaseProvider);
-  return CompletedConsultationsNotifier(getCompletedConsultations: useCase);
-});
+final completedConsultationsProvider =
+    StateNotifierProvider<
+      CompletedConsultationsNotifier,
+      AsyncValue<List<Map<String, dynamic>>>
+    >((ref) {
+      final useCase = ref.watch(getCompletedConsultationsUseCaseProvider);
+      return CompletedConsultationsNotifier(getCompletedConsultations: useCase);
+    });
 
-final cancelledConsultationsProvider = StateNotifierProvider<
-    CancelledConsultationsNotifier,
-    AsyncValue<List<Map<String, dynamic>>>>((ref) {
-  final useCase = ref.watch(getCancelledConsultationsUseCaseProvider);
-  return CancelledConsultationsNotifier(getCancelledConsultations: useCase);
-});
+final cancelledConsultationsProvider =
+    StateNotifierProvider<
+      CancelledConsultationsNotifier,
+      AsyncValue<List<Map<String, dynamic>>>
+    >((ref) {
+      final useCase = ref.watch(getCancelledConsultationsUseCaseProvider);
+      return CancelledConsultationsNotifier(getCancelledConsultations: useCase);
+    });

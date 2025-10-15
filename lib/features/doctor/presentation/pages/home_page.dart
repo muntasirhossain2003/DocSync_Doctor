@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../data/datasources/doctor_remote_datasource.dart';
+
 import '../../../../core/constants/app_theme.dart';
 import '../providers/doctor_profile_provider.dart';
 
@@ -47,29 +47,34 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         actions: [
           // Online/Offline toggle
-          // doctorProfile.when(
-          //   data: (doctor) {
-          //     if (doctor == null) return const SizedBox.shrink();
-          //     return Row(
-          //       children: [
-          //         Text(
-          //           doctor.isOnline ? 'Online' : 'Offline',
-          //           style: const TextStyle(fontSize: 12),
-          //         ),
-          //         Switch(
-          //           value: doctor.isOnline,
-          //           onChanged: (_) {
-          //             ref
-          //                 .read(doctorProfileProvider.notifier)
-          //                 .toggleOnlineStatus();
-          //           },
-          //         ),
-          //       ],
-          //     );
-          //   },
-          //   loading: () => const SizedBox.shrink(),
-          //   error: (_, __) => const SizedBox.shrink(),
-          // ),
+          doctorProfile.when(
+            data: (doctor) {
+              if (doctor == null) return const SizedBox.shrink();
+              return Row(
+                children: [
+                  Text(
+                    doctor.isOnline ? 'Online' : 'Offline',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: doctor.isOnline ? Colors.green : Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Switch(
+                    value: doctor.isOnline,
+                    activeColor: Colors.green,
+                    onChanged: (_) {
+                      ref
+                          .read(doctorProfileProvider.notifier)
+                          .toggleOnlineStatus();
+                    },
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
@@ -177,33 +182,40 @@ class _HomePageState extends ConsumerState<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Show upcoming consultations
-                  Text(
-                    'Upcoming Consultations',
-                    style: AppTextStyles.h4,
-                  ),
+                  Text('Upcoming Consultations', style: AppTextStyles.h4),
                   const SizedBox(height: AppSpacing.md),
 
                   // Horizontal scrollable consultation cards
                   SizedBox(
-                    height: 160,
+                    height: 200,
                     child: Consumer(
                       builder: (context, ref, _) {
-                        final consultationsAsync =
-                            ref.watch(upcomingConsultationsProvider);
-                        final doctor =
-                            ref.watch(doctorProfileProvider).value;
+                        final consultationsAsync = ref.watch(
+                          upcomingConsultationsProvider,
+                        );
+                        final doctor = ref.watch(doctorProfileProvider).value;
 
-                        if (doctor != null) {
-                          ref
-                              .read(upcomingConsultationsProvider.notifier)
-                              .load(doctor.id);
-                        }
+                        // Load consultations only when loading and doctor is available
+                        consultationsAsync.whenOrNull(
+                          loading: () {
+                            if (doctor != null) {
+                              Future.microtask(
+                                () => ref
+                                    .read(
+                                      upcomingConsultationsProvider.notifier,
+                                    )
+                                    .load(doctor.id),
+                              );
+                            }
+                          },
+                        );
 
                         return consultationsAsync.when(
                           data: (consultations) {
                             if (consultations.isEmpty) {
                               return const Center(
-                                  child: Text("No upcoming consultations!"));
+                                child: Text("No upcoming consultations!"),
+                              );
                             }
 
                             return ListView.separated(
@@ -215,7 +227,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 final consultation = consultations[index];
                                 final patient = consultation['patient'];
                                 final dateTime = DateTime.parse(
-                                    consultation['scheduled_time']);
+                                  consultation['scheduled_time'],
+                                );
                                 final formattedTime =
                                     '${dateTime.day}/${dateTime.month} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
 
@@ -241,13 +254,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         children: [
                                           CircleAvatar(
                                             radius: 24,
-                                            backgroundImage: patient[
-                                                        'profile_picture_url'] !=
+                                            backgroundImage:
+                                                patient['profile_picture_url'] !=
                                                     null
-                                                ? NetworkImage(patient[
-                                                    'profile_picture_url'])
+                                                ? NetworkImage(
+                                                    patient['profile_picture_url'],
+                                                  )
                                                 : null,
-                                            child: patient['profile_picture_url'] ==
+                                            child:
+                                                patient['profile_picture_url'] ==
                                                     null
                                                 ? Text(
                                                     patient['full_name'][0]
@@ -270,22 +285,55 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ],
                                       ),
-                                      const Spacer(),
+                                      const SizedBox(height: AppSpacing.sm),
                                       Text(
                                         'Time: $formattedTime',
-                                        style: AppTextStyles.bodyMedium
-                                            .copyWith(
+                                        style: AppTextStyles.bodySmall.copyWith(
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
-                                      const SizedBox(height: AppSpacing.xs),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        'Status: ${consultation['consultation_status']}',
-                                        style: AppTextStyles.bodySmall
-                                            .copyWith(
+                                        'Type: ${consultation['consultation_type']}',
+                                        style: AppTextStyles.bodySmall.copyWith(
                                           color: AppColors.textSecondary,
+                                          fontSize: 12,
                                         ),
                                       ),
+                                      const Spacer(),
+                                      if (consultation['consultation_type'] ==
+                                          'video')
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              context.push(
+                                                '/video-call/${consultation['id']}',
+                                                extra: {
+                                                  'patientId': patient['id'],
+                                                  'patientName':
+                                                      patient['full_name'],
+                                                  'patientImageUrl':
+                                                      patient['profile_picture_url'],
+                                                },
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.video_call,
+                                              size: 18,
+                                            ),
+                                            label: const Text(
+                                              'Join Call',
+                                              style: TextStyle(fontSize: 13),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 10,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 );
@@ -300,17 +348,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.error_outline,
-                                      size: 60, color: Colors.red),
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 60,
+                                    color: Colors.red,
+                                  ),
                                   const SizedBox(height: AppSpacing.md),
-                                  Text('Error loading consultations',
-                                      style: AppTextStyles.h3),
+                                  Text(
+                                    'Error loading consultations',
+                                    style: AppTextStyles.h3,
+                                  ),
                                   const SizedBox(height: AppSpacing.sm),
                                   Text(
                                     error.toString(),
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                        color: AppColors.textSecondary),
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
