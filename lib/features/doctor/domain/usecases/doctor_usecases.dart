@@ -68,3 +68,48 @@ class UpdateOnlineStatus {
     return repository.updateOnlineStatus(doctorId, isOnline);
   }
 }
+
+class GetUpcomingConsultations {
+  final DoctorRepository repository;
+
+  GetUpcomingConsultations(this.repository);
+
+  Future<List<Map<String, dynamic>>> call(String doctorId) async {
+    try {
+      return await repository.getUpcomingConsultations(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch upcoming consultations: $e');
+    }
+  }
+
+}
+
+class GetCompletedConsultations {
+  final DoctorRepository repository;
+
+  GetCompletedConsultations(this.repository);
+
+  Future<List<Map<String, dynamic>>> call(String doctorId) async {
+    try {
+      return await repository.getCompletedConsultations(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch upcoming consultations: $e');
+    }
+  }
+
+}
+
+class GetCancelledConsultations {
+  final DoctorRepository repository;
+
+  GetCancelledConsultations(this.repository);
+
+  Future<List<Map<String, dynamic>>> call(String doctorId) async {
+    try {
+      return await repository.getCompletedConsultations(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch upcoming consultations: $e');
+    }
+  }
+
+}
