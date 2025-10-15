@@ -79,15 +79,28 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 
   /// Load doctor profile by authentication ID
   Future<void> loadProfile(String authId) async {
-    state = const AsyncValue.loading();
+  if (!mounted) return;
+  state = const AsyncValue.loading();
 
+  try {
     final result = await getDoctorProfileByAuthId(authId);
 
     result.fold(
-      (error) => state = AsyncValue.error(error, StackTrace.current),
-      (doctor) => state = AsyncValue.data(doctor),
+      (error) {
+        if (!mounted) return;
+        state = AsyncValue.error(error, StackTrace.current);
+      },
+      (doctor) {
+        if (!mounted) return;
+        state = AsyncValue.data(doctor);
+      },
     );
+  } catch (e, st) {
+    if (!mounted) return;
+    state = AsyncValue.error(e.toString(), st);
   }
+}
+
 
   /// Update doctor profile
   Future<bool> updateProfile(Doctor doctor) async {

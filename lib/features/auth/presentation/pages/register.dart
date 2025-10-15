@@ -44,7 +44,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       final user = authResponse.user;
       if (user == null) throw const AuthException('User creation failed');
 
-      print('✅ Auth user created: ${user.id}');
 
       // Step 2: Wait for auth to fully process
       await Future.delayed(const Duration(milliseconds: 1000));
@@ -66,7 +65,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         'role': role,
       }).select();
 
-      print('✅ User record created successfully: $userInsert');
+      print('✅ User record created successfully!');
 
       // Step 4: Verify the user record was created
       final verifyUser = await supabase
@@ -80,8 +79,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           'User record was not created. Please contact support or try again.',
         );
       }
-
-      print('✅ User record verified: $verifyUser');
 
       // Note: Doctor profile will be completed later through the app
 
@@ -99,7 +96,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
       context.pop(); // back to login
     } on AuthException catch (e) {
-      print('❌ Auth Error: ${e.message}');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,9 +105,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         ),
       );
     } on PostgrestException catch (e) {
-      print('❌ Database Error: ${e.message}');
-      print('Details: ${e.details}');
-      print('Hint: ${e.hint}');
 
       if (!mounted) return;
 
@@ -155,7 +148,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         );
       }
     } catch (e) {
-      print('❌ Unexpected Error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
