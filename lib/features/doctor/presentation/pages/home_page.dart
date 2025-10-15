@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../data/datasources/doctor_remote_datasource.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../providers/doctor_profile_provider.dart';
 
@@ -14,10 +14,12 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final supabase = Supabase.instance.client;
+
   @override
   void initState() {
     super.initState();
-    // Load doctor profile when page initializes
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authId = Supabase.instance.client.auth.currentUser?.id;
       if (authId != null) {
@@ -32,32 +34,42 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: doctorProfile.when(
+          data: (doctor) {
+            if (doctor == null || doctor.fullName.isEmpty) {
+              return const Text('Dashboard');
+            }
+            final firstname = doctor.fullName.split(' ').first;
+            return Text('Welcome Dr. $firstname!');
+          },
+          loading: () => const Text('Dashboard'),
+          error: (_, __) => const Text('Dashboard'),
+        ),
         actions: [
           // Online/Offline toggle
-          doctorProfile.when(
-            data: (doctor) {
-              if (doctor == null) return const SizedBox.shrink();
-              return Row(
-                children: [
-                  Text(
-                    doctor.isOnline ? 'Online' : 'Offline',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  Switch(
-                    value: doctor.isOnline,
-                    onChanged: (_) {
-                      ref
-                          .read(doctorProfileProvider.notifier)
-                          .toggleOnlineStatus();
-                    },
-                  ),
-                ],
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
+          // doctorProfile.when(
+          //   data: (doctor) {
+          //     if (doctor == null) return const SizedBox.shrink();
+          //     return Row(
+          //       children: [
+          //         Text(
+          //           doctor.isOnline ? 'Online' : 'Offline',
+          //           style: const TextStyle(fontSize: 12),
+          //         ),
+          //         Switch(
+          //           value: doctor.isOnline,
+          //           onChanged: (_) {
+          //             ref
+          //                 .read(doctorProfileProvider.notifier)
+          //                 .toggleOnlineStatus();
+          //           },
+          //         ),
+          //       ],
+          //     );
+          //   },
+          //   loading: () => const SizedBox.shrink(),
+          //   error: (_, __) => const SizedBox.shrink(),
+          // ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
@@ -164,81 +176,157 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome card
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: doctor.profilePictureUrl != null
-                                ? NetworkImage(doctor.profilePictureUrl!)
-                                : null,
-                            child: doctor.profilePictureUrl == null
-                                ? Text(
-                                    doctor.fullName.isNotEmpty
-                                        ? doctor.fullName[0].toUpperCase()
-                                        : 'D',
-                                    style: AppTextStyles.h2,
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Dr. ${doctor.fullName}',
-                                  style: AppTextStyles.h3,
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  doctor.specialization ?? 'Specialist',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.textSecondary,
+                  // Show upcoming consultations
+                  Text(
+                    'Upcoming Consultations',
+                    style: AppTextStyles.h4,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Horizontal scrollable consultation cards
+                  SizedBox(
+                    height: 160,
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final consultationsAsync =
+                            ref.watch(upcomingConsultationsProvider);
+                        final doctor =
+                            ref.watch(doctorProfileProvider).value;
+
+                        if (doctor != null) {
+                          ref
+                              .read(upcomingConsultationsProvider.notifier)
+                              .load(doctor.id);
+                        }
+
+                        return consultationsAsync.when(
+                          data: (consultations) {
+                            if (consultations.isEmpty) {
+                              return const Center(
+                                  child: Text("No upcoming consultations!"));
+                            }
+
+                            return ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: consultations.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: AppSpacing.md),
+                              itemBuilder: (context, index) {
+                                final consultation = consultations[index];
+                                final patient = consultation['patient'];
+                                final dateTime = DateTime.parse(
+                                    consultation['scheduled_time']);
+                                final formattedTime =
+                                    '${dateTime.day}/${dateTime.month} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+                                return Container(
+                                  width: 220,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: doctor.isOnline
-                                            ? AppColors.success
-                                            : AppColors.grey,
-                                        shape: BoxShape.circle,
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 24,
+                                            backgroundImage: patient[
+                                                        'profile_picture_url'] !=
+                                                    null
+                                                ? NetworkImage(patient[
+                                                    'profile_picture_url'])
+                                                : null,
+                                            child: patient['profile_picture_url'] ==
+                                                    null
+                                                ? Text(
+                                                    patient['full_name'][0]
+                                                        .toUpperCase(),
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                    ),
+                                                  )
+                                                : null,
+                                          ),
+                                          const SizedBox(width: AppSpacing.sm),
+                                          Expanded(
+                                            child: Text(
+                                              patient['full_name'],
+                                              style: AppTextStyles.h4,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.xs),
-                                    Text(
-                                      doctor.isOnline ? 'Online' : 'Offline',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: doctor.isOnline
-                                            ? AppColors.success
-                                            : AppColors.grey,
+                                      const Spacer(),
+                                      Text(
+                                        'Time: $formattedTime',
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(height: AppSpacing.xs),
+                                      Text(
+                                        'Status: ${consultation['consultation_status']}',
+                                        style: AppTextStyles.bodySmall
+                                            .copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
+                          error: (error, stack) => Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.error_outline,
+                                      size: 60, color: Colors.red),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text('Error loading consultations',
+                                      style: AppTextStyles.h3),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    error.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
 
                   const SizedBox(height: AppSpacing.lg),
 
                   // Stats cards
-                  Text('Today\'s Overview', style: AppTextStyles.h4),
+                  Text('Overview', style: AppTextStyles.h4),
                   const SizedBox(height: AppSpacing.md),
+
                   Row(
                     children: [
                       Expanded(
@@ -261,6 +349,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
+
                   Row(
                     children: [
                       Expanded(
@@ -282,104 +371,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: AppSpacing.lg),
-
-                  // Quick actions
-                  Text('Quick Actions', style: AppTextStyles.h4),
-                  const SizedBox(height: AppSpacing.md),
-                  Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(
-                            Icons.schedule,
-                            color: AppColors.primary,
-                          ),
-                          title: const Text('Manage Schedule'),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () {
-                            // TODO: Navigate to schedule
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Schedule management coming soon!',
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(
-                            Icons.edit,
-                            color: AppColors.primary,
-                          ),
-                          title: const Text('Update Profile'),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => context.push('/doctor/profile/edit'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(
-                            Icons.history,
-                            color: AppColors.primary,
-                          ),
-                          title: const Text('Consultation History'),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () {
-                            // TODO: Navigate to history
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Consultation history coming soon!',
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSpacing.lg),
-
-                  // Recent consultations placeholder
-                  Text('Recent Consultations', style: AppTextStyles.h4),
-                  const SizedBox(height: AppSpacing.md),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.inbox_outlined,
-                              size: 60,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              'No recent consultations',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

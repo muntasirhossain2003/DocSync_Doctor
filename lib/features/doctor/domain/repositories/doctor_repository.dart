@@ -18,6 +18,13 @@ abstract class DoctorRepository {
   /// Complete doctor profile (first-time setup)
   Future<Either<String, Doctor>> completeDoctorProfile(Doctor doctor);
 
+  Future<List<Map<String, dynamic>>> getUpcomingConsultations(String doctorId);
+
+ Future<List<Map<String, dynamic>>> getCompletedConsultations(String doctorId);
+
+ Future<List<Map<String, dynamic>>> getCancelledConsultations(String doctorId);
+  
+
   /// Update doctor availability status
   Future<Either<String, bool>> updateAvailability(
     String doctorId,

@@ -191,4 +191,76 @@ class DoctorRemoteDataSource {
       throw Exception('Failed to update online status: $e');
     }
   }
+
+  /// Get completed consultations for a doctor
+Future<List<Map<String, dynamic>>> getCompletedConsultations(String doctorId) async {
+  try {
+    final response = await supabaseClient
+        .from('consultations')
+        .select('''
+          id,
+          scheduled_time,
+          consultation_type,
+          consultation_status,
+          patient:users!consultations_patient_id_fkey(full_name, profile_picture_url)
+        ''')
+        .eq('doctor_id', doctorId)
+        .eq('consultation_status', 'completed')
+        .order('scheduled_time', ascending: false); // Show most recent first
+
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    throw Exception('Failed to fetch completed consultations: $e');
+  }
+}
+
+/// Get cancelled consultations for a doctor
+Future<List<Map<String, dynamic>>> getCancelledConsultations(String doctorId) async {
+  try {
+    final response = await supabaseClient
+        .from('consultations')
+        .select('''
+          id,
+          scheduled_time,
+          consultation_type,
+          consultation_status,
+          patient:users!consultations_patient_id_fkey(full_name, profile_picture_url)
+        ''')
+        .eq('doctor_id', doctorId)
+        .eq('consultation_status', 'cancelled')
+        .order('scheduled_time', ascending: false); // Show most recent first
+
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    throw Exception('Failed to fetch cancelled consultations: $e');
+  }
+}
+
+
+
+Future<List<Map<String, dynamic>>> getUpcomingConsultations(String doctorId) async {
+  try {
+    final now = DateTime.now().toIso8601String();
+
+    final response = await supabaseClient
+        .from('consultations')
+        .select('''
+          id,
+          scheduled_time,
+          consultation_type,
+          consultation_status,
+          patient:users!consultations_patient_id_fkey(full_name, profile_picture_url)
+        ''')
+        .eq('doctor_id', doctorId)
+        .eq('consultation_status', 'scheduled')
+        .gt('scheduled_time', now)
+        .order('scheduled_time', ascending: true);
+
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    throw Exception('Failed to fetch upcoming consultations: $e');
+  }
+}
+
+
 }

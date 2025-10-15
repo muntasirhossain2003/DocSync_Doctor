@@ -55,6 +55,12 @@ final updateOnlineStatusUseCaseProvider = Provider((ref) {
   return UpdateOnlineStatus(repository);
 });
 
+// Use case for upcoming consultations
+final getUpcomingConsultationsUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetUpcomingConsultations(repository);
+});
+
 // Doctor profile state notifier
 class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
   final GetDoctorProfileByAuthId getDoctorProfileByAuthId;
@@ -163,13 +169,108 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 // Doctor profile state notifier provider
 final doctorProfileProvider =
     StateNotifierProvider<DoctorProfileNotifier, AsyncValue<Doctor?>>((ref) {
-      return DoctorProfileNotifier(
-        getDoctorProfileByAuthId: ref.watch(
-          getDoctorProfileByAuthIdUseCaseProvider,
-        ),
-        updateDoctorProfile: ref.watch(updateDoctorProfileUseCaseProvider),
-        completeDoctorProfile: ref.watch(completeDoctorProfileUseCaseProvider),
-        updateAvailability: ref.watch(updateAvailabilityUseCaseProvider),
-        updateOnlineStatus: ref.watch(updateOnlineStatusUseCaseProvider),
-      );
-    });
+  return DoctorProfileNotifier(
+    getDoctorProfileByAuthId: ref.watch(
+      getDoctorProfileByAuthIdUseCaseProvider,
+    ),
+    updateDoctorProfile: ref.watch(updateDoctorProfileUseCaseProvider),
+    completeDoctorProfile: ref.watch(completeDoctorProfileUseCaseProvider),
+    updateAvailability: ref.watch(updateAvailabilityUseCaseProvider),
+    updateOnlineStatus: ref.watch(updateOnlineStatusUseCaseProvider),
+  );
+});
+
+
+class UpcomingConsultationsNotifier
+    extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
+  final GetUpcomingConsultations getUpcomingConsultations;
+
+  UpcomingConsultationsNotifier({required this.getUpcomingConsultations})
+      : super(const AsyncValue.loading());
+
+  Future<void> load(String doctorId) async {
+  state = const AsyncValue.loading();
+
+  try {
+    final consultations = await getUpcomingConsultations(doctorId);
+    state = AsyncValue.data(consultations);
+  } catch (e, st) {
+    state = AsyncValue.error(e.toString(), st);
+  }
+}
+
+}
+
+// Provider for upcoming consultations
+final upcomingConsultationsProvider = StateNotifierProvider<
+    UpcomingConsultationsNotifier,
+    AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final useCase = ref.watch(getUpcomingConsultationsUseCaseProvider);
+  return UpcomingConsultationsNotifier(getUpcomingConsultations: useCase);
+});
+
+// Use cases for completed and cancelled consultations
+final getCompletedConsultationsUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetCompletedConsultations(repository);
+});
+
+final getCancelledConsultationsUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetCancelledConsultations(repository);
+});
+
+// Completed consultations notifier
+class CompletedConsultationsNotifier
+    extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
+  final GetCompletedConsultations getCompletedConsultations;
+
+  CompletedConsultationsNotifier({required this.getCompletedConsultations})
+      : super(const AsyncValue.loading());
+
+  Future<void> load(String doctorId) async {
+    state = const AsyncValue.loading();
+
+    try {
+      final consultations = await getCompletedConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      state = AsyncValue.error(e.toString(), st);
+    }
+  }
+}
+
+// Cancelled consultations notifier
+class CancelledConsultationsNotifier
+    extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
+  final GetCancelledConsultations getCancelledConsultations;
+
+  CancelledConsultationsNotifier({required this.getCancelledConsultations})
+      : super(const AsyncValue.loading());
+
+  Future<void> load(String doctorId) async {
+    state = const AsyncValue.loading();
+
+    try {
+      final consultations = await getCancelledConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      state = AsyncValue.error(e.toString(), st);
+    }
+  }
+}
+
+// Providers
+final completedConsultationsProvider = StateNotifierProvider<
+    CompletedConsultationsNotifier,
+    AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final useCase = ref.watch(getCompletedConsultationsUseCaseProvider);
+  return CompletedConsultationsNotifier(getCompletedConsultations: useCase);
+});
+
+final cancelledConsultationsProvider = StateNotifierProvider<
+    CancelledConsultationsNotifier,
+    AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final useCase = ref.watch(getCancelledConsultationsUseCaseProvider);
+  return CancelledConsultationsNotifier(getCancelledConsultations: useCase);
+});

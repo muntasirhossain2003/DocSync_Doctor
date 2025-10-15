@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'consultations_page.dart';
+import '../../../consultations/presentation/pages/consultations_page.dart';
 import 'home_page.dart';
 import 'profile_page.dart';
-import 'schedule_page.dart';
 
 class DoctorMainScaffold extends ConsumerStatefulWidget {
   const DoctorMainScaffold({super.key});
@@ -19,7 +18,6 @@ class _DoctorMainScaffoldState extends ConsumerState<DoctorMainScaffold> {
   final List<Widget> _pages = [
     const HomePage(),
     const ConsultationsPage(),
-    const SchedulePage(),
     const ProfilePage(),
   ];
 
@@ -47,11 +45,6 @@ class _DoctorMainScaffoldState extends ConsumerState<DoctorMainScaffold> {
             icon: Icon(Icons.video_call_outlined),
             activeIcon: Icon(Icons.video_call),
             label: 'Consultations',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Schedule',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
