@@ -431,13 +431,31 @@ class DoctorRemoteDataSource {
       for (var payment in paymentsResponse) {
         final amount = payment['amount'];
         if (amount != null) {
-          totalEarnings += (amount is int) ? amount.toDouble() : amount as double;
+          totalEarnings += (amount is int)
+              ? amount.toDouble()
+              : amount as double;
         }
       }
 
       return totalEarnings;
     } catch (e) {
       throw Exception('Failed to fetch total earnings: $e');
+    }
+  }
+
+  /// Update doctor profile picture
+  Future<void> updateProfilePicture(String userId, String imageUrl) async {
+    try {
+      // Update users table
+      await supabaseClient
+          .from('users')
+          .update({
+            'profile_picture_url': imageUrl,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+    } catch (e) {
+      throw Exception('Failed to update profile picture: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,9 +41,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ),
         title: Text(
           'Profile',
-          style: AppTextStyles.h3.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           Container(
@@ -73,10 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primaryLight,
-                    Colors.white,
-                  ],
+                  colors: [AppColors.primaryLight, Colors.white],
                 ),
               ),
               child: Center(
@@ -130,7 +126,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => context.push('/doctor/profile/edit'),
+                            onPressed: () =>
+                                context.push('/doctor/profile/edit'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -138,7 +135,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 vertical: AppSpacing.md,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
                               ),
                               elevation: 0,
                             ),
@@ -147,7 +146,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               children: [
                                 const Icon(Icons.add_rounded, size: 20),
                                 const SizedBox(width: 8),
-                                Text('Create Profile', style: AppTextStyles.button),
+                                Text(
+                                  'Create Profile',
+                                  style: AppTextStyles.button,
+                                ),
                               ],
                             ),
                           ),
@@ -218,10 +220,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           child: CircleAvatar(
                             radius: 56,
                             backgroundColor: AppColors.primaryLight,
-                            backgroundImage: doctor.profilePictureUrl != null
-                                ? NetworkImage(doctor.profilePictureUrl!)
+                            backgroundImage:
+                                doctor.profilePictureUrl != null &&
+                                    doctor.profilePictureUrl!.isNotEmpty
+                                ? CachedNetworkImageProvider(
+                                    doctor.profilePictureUrl!,
+                                  )
                                 : null,
-                            child: doctor.profilePictureUrl == null
+                            child:
+                                doctor.profilePictureUrl == null ||
+                                    doctor.profilePictureUrl!.isEmpty
                                 ? Text(
                                     doctor.fullName.isNotEmpty
                                         ? doctor.fullName[0].toUpperCase()
@@ -336,16 +344,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         icon: Icons.email_rounded,
                         label: 'Email',
                         value: doctor.email,
-                        isLast: doctor.phoneNumber == null && 
-                                doctor.gender == null && 
-                                doctor.dateOfBirth == null,
+                        isLast:
+                            doctor.phoneNumber == null &&
+                            doctor.gender == null &&
+                            doctor.dateOfBirth == null,
                       ),
                       if (doctor.phoneNumber != null)
                         _buildInfoRow(
                           icon: Icons.phone_rounded,
                           label: 'Phone',
                           value: doctor.phoneNumber!,
-                          isLast: doctor.gender == null && doctor.dateOfBirth == null,
+                          isLast:
+                              doctor.gender == null &&
+                              doctor.dateOfBirth == null,
                         ),
                       if (doctor.gender != null)
                         _buildInfoRow(
@@ -358,7 +369,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         _buildInfoRow(
                           icon: Icons.cake_rounded,
                           label: 'Date of Birth',
-                          value: '${doctor.dateOfBirth!.day}/${doctor.dateOfBirth!.month}/${doctor.dateOfBirth!.year}',
+                          value:
+                              '${doctor.dateOfBirth!.day}/${doctor.dateOfBirth!.month}/${doctor.dateOfBirth!.year}',
                           isLast: true,
                         ),
                     ],
@@ -374,7 +386,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         icon: Icons.badge_rounded,
                         label: 'BMDC Registration',
                         value: doctor.bmdcRegistrationNumber,
-                        isLast: doctor.qualification == null && doctor.experience == null,
+                        isLast:
+                            doctor.qualification == null &&
+                            doctor.experience == null,
                       ),
                       if (doctor.qualification != null)
                         _buildInfoRow(
@@ -425,7 +439,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: BoxDecoration(
                                     color: AppColors.primaryLight,
-                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
+                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.info_rounded,
@@ -445,7 +461,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                           Container(
                             height: 1,
-                            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -500,7 +518,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                         Container(
                           height: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           color: AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
@@ -517,7 +537,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                         Container(
                           height: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           color: AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
@@ -534,7 +556,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                         Container(
                           height: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           color: AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
@@ -586,9 +610,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
         error: (error, stack) => Container(
           color: AppColors.background,
@@ -644,7 +666,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          final authId = Supabase.instance.client.auth.currentUser?.id;
+                          final authId =
+                              Supabase.instance.client.auth.currentUser?.id;
                           if (authId != null) {
                             ref
                                 .read(doctorProfileProvider.notifier)
@@ -713,18 +736,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Icon(
-                    titleIcon,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
+                  child: Icon(titleIcon, color: AppColors.primary, size: 20),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   title,
-                  style: AppTextStyles.h4.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.h4.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -746,9 +763,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // Content
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ],
       ),
@@ -768,11 +783,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: AppColors.primary.withOpacity(0.7),
-              ),
+              Icon(icon, size: 20, color: AppColors.primary.withOpacity(0.7)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -833,11 +844,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   color: iconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 22,
-                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -885,9 +892,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             const SizedBox(width: AppSpacing.sm),
             Text(
               'Logout',
-              style: AppTextStyles.h3.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
