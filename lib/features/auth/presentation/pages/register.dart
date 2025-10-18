@@ -227,7 +227,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   controller: fullNameController,
                   label: 'Full Name',
                   icon: Icons.person_outline,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Full name is required';
+                    }
+                    if (v.trim().length < 5) {
+                      return 'Name must be at least 5 characters';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -236,7 +244,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   controller: emailController,
                   label: 'Email Address',
                   icon: Icons.email_outlined,
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Email is required';
+                    }
+                    // Email regex pattern
+                    final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    );
+                    if (!emailRegex.hasMatch(v.trim())) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -246,8 +267,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   label: 'Password',
                   icon: Icons.lock_outline,
                   isPassword: true,
-                  validator: (v) =>
-                      v!.length < 8 ? 'Minimum 8 characters' : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (v.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -274,6 +302,31 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   controller: phoneController,
                   label: 'Phone',
                   icon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Phone number is required';
+                    }
+                    // Remove any spaces or dashes
+                    final phone = v.trim().replaceAll(RegExp(r'[\s-]'), '');
+                    
+                    // Check if it's exactly 11 digits
+                    if (phone.length != 11) {
+                      return 'Phone number must be exactly 11 digits';
+                    }
+                    
+                    // Check if it starts with "01"
+                    if (!phone.startsWith('01')) {
+                      return 'Phone number must start with 01';
+                    }
+                    
+                    // Check if all characters are digits
+                    if (!RegExp(r'^\d+$').hasMatch(phone)) {
+                      return 'Phone number must contain only digits';
+                    }
+                    
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -410,12 +463,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     IconData? icon,
     bool isPassword = false,
     String? Function(String?)? validator,
+    TextInputType? keyboardType,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
       validator: validator,
-      decoration: _inputDecoration(label: label, icon: icon),
+      keyboardType: keyboardType,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: _inputDecoration(label: label, icon: icon).copyWith(
+        errorStyle: const TextStyle(
+          color: Colors.red,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 }
