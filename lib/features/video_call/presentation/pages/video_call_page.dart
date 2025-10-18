@@ -31,6 +31,7 @@ class VideoCallPage extends ConsumerStatefulWidget {
 
 class _VideoCallPageState extends ConsumerState<VideoCallPage> {
   bool _isInitialized = false;
+  bool _isEnding = false;
 
   @override
   void initState() {
@@ -40,6 +41,17 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
     // Initialize call after the first frame to avoid modifying provider during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeCall();
+
+      // Listen for call state changes
+      ref.listenManual(videoCallProvider, (previous, next) {
+        // Handle call disconnected
+        if (next.status == CallStatus.disconnected &&
+            _isInitialized &&
+            !_isEnding &&
+            mounted) {
+          _navigateBack();
+        }
+      });
     });
   }
 
@@ -47,6 +59,12 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
   void dispose() {
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  void _navigateBack() {
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _initializeCall() async {
@@ -80,23 +98,80 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
     final callState = ref.watch(videoCallProvider);
     final agoraService = ref.watch(agoraServiceProvider);
 
-    // Handle call ended
-    if (callState.status == CallStatus.disconnected && _isInitialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      });
+    // Show ending screen
+    if (_isEnding || callState.status == CallStatus.disconnected) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Back button at top
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (mounted && Navigator.canPop(context)) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_back),
+                      tooltip: 'Go Back',
+                    ),
+                  ],
+                ),
+              ),
+              // Centered content
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.call_end, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Call Ended',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Back button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if (mounted && Navigator.canPop(context)) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Go Back'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
+        if (!didPop && !_isEnding) {
           final shouldEnd = await _showEndCallDialog();
           if (shouldEnd == true && mounted) {
-            await ref.read(videoCallProvider.notifier).endCall();
-            if (mounted) Navigator.of(context).pop();
+            await _handleEndCall();
           }
         }
       },
@@ -303,11 +378,14 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
   }
 
   Future<void> _handleEndCall() async {
-    final shouldEnd = await _showEndCallDialog();
-    if (shouldEnd == true) {
-      await ref.read(videoCallProvider.notifier).endCall();
-      if (mounted) Navigator.of(context).pop();
-    }
+    if (_isEnding) return; // Prevent multiple calls
+
+    setState(() => _isEnding = true);
+
+    // End call
+    await ref.read(videoCallProvider.notifier).endCall();
+
+    // Navigation will be handled by the listener in initState
   }
 
   Future<bool?> _showEndCallDialog() {
