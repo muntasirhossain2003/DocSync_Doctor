@@ -59,6 +59,33 @@ class DoctorRepositoryImpl implements DoctorRepository {
   }
 
   @override
+  Future<int> getTotalPatientsCount(String doctorId) async {
+    try {
+      return await remoteDataSource.getTotalPatientsCount(doctorId);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<int> getScheduledConsultationsCount(String doctorId) async {
+    try {
+      return await remoteDataSource.getScheduledConsultationsCount(doctorId);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<double> getTotalEarnings(String doctorId) async {
+    try {
+      return await remoteDataSource.getTotalEarnings(doctorId);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
   Future<Either<String, Doctor?>> getDoctorProfileByAuthId(
     String authId,
   ) async {

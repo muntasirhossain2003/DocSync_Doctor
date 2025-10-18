@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/routing/router.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'features/video_call/presentation/widgets/incoming_call_listener.dart';
 
 class MyApp extends ConsumerWidget {
@@ -29,11 +31,14 @@ class MyApp extends ConsumerWidget {
         }
 
         final router = ref.watch(appRouterProvider);
+        final themeMode = ref.watch(themeModeProvider);
 
         return IncomingCallListener(
           child: MaterialApp.router(
             title: 'DocSync',
-            theme: ThemeData(primarySwatch: Colors.indigo),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
             routerConfig: router,
           ),
         );
