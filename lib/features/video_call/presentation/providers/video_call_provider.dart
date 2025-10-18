@@ -154,13 +154,33 @@ class VideoCallNotifier extends StateNotifier<CallState> {
 
   /// End the call
   Future<void> endCall() async {
-    await _agoraService.leaveChannel();
-    _stopDurationTimer();
-    state = CallState(
-      callId: '',
-      channelName: AgoraConfig.channelName,
-      status: CallStatus.disconnected,
-    );
+    try {
+      _stopDurationTimer();
+
+      // Disable video and audio before leaving
+      if (_agoraService.engine != null) {
+        await _agoraService.toggleVideo(false);
+        await _agoraService.toggleAudio(false);
+      }
+
+      // Leave the channel
+      await _agoraService.leaveChannel();
+
+      // Reset state
+      state = CallState(
+        callId: '',
+        channelName: AgoraConfig.channelName,
+        status: CallStatus.disconnected,
+      );
+    } catch (e) {
+      print('Error ending call: $e');
+      // Force reset state even if there's an error
+      state = CallState(
+        callId: '',
+        channelName: AgoraConfig.channelName,
+        status: CallStatus.disconnected,
+      );
+    }
   }
 
   @override
