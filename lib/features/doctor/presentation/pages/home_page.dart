@@ -71,9 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(height: 2),
                 Text(
                   'Dr. $firstname',
-                  style: AppTextStyles.h3.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             );
@@ -111,9 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: doctor.isOnline
-                            ? context.success
-                            : context.grey,
+                        color: doctor.isOnline ? context.success : context.grey,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -233,7 +229,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => context.push('/doctor/profile/edit'),
+                            onPressed: () =>
+                                context.push('/doctor/profile/edit'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: context.primaryColor,
                               foregroundColor: context.onPrimary,
@@ -241,7 +238,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 vertical: AppSpacing.md,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
                               ),
                               elevation: 0,
                             ),
@@ -330,7 +329,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => context.push('/doctor/profile/edit'),
+                            onPressed: () =>
+                                context.push('/doctor/profile/edit'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: context.warning,
                               foregroundColor: context.onPrimary,
@@ -338,7 +338,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 vertical: AppSpacing.md,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.lg,
+                                ),
                               ),
                               elevation: 0,
                             ),
@@ -391,7 +393,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                   // Horizontal scrollable consultation cards with modern design
                   SizedBox(
-                    height: 210,
+                    height: 230,
                     child: Consumer(
                       builder: (context, ref, _) {
                         final consultationsAsync = ref.watch(
@@ -420,7 +422,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                               return Container(
                                 decoration: BoxDecoration(
                                   color: context.greyLight,
-                                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.xl,
+                                  ),
                                   border: Border.all(
                                     color: context.borderColor,
                                     width: 1,
@@ -433,14 +437,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       Icon(
                                         Icons.calendar_today_rounded,
                                         size: 48,
-                                        color: context.textSecondary.withOpacity(0.5),
+                                        color: context.textSecondary
+                                            .withOpacity(0.5),
                                       ),
                                       const SizedBox(height: AppSpacing.sm),
                                       Text(
                                         "No upcoming consultations",
-                                        style: AppTextStyles.bodyMedium.copyWith(
-                                          color: context.textSecondary,
-                                        ),
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                              color: context.textSecondary,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -459,19 +465,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 final dateTime = DateTime.parse(
                                   consultation['scheduled_time'],
                                 );
-                                
+
                                 // Format date and time separately
                                 final months = [
-                                  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                                  'Jan',
+                                  'Feb',
+                                  'Mar',
+                                  'Apr',
+                                  'May',
+                                  'Jun',
+                                  'Jul',
+                                  'Aug',
+                                  'Sep',
+                                  'Oct',
+                                  'Nov',
+                                  'Dec',
                                 ];
-                                final formattedDate = '${dateTime.day} ${months[dateTime.month - 1]}, ${dateTime.year}';
-                                
+                                final formattedDate =
+                                    '${dateTime.day} ${months[dateTime.month - 1]}, ${dateTime.year}';
+
                                 // Format time with AM/PM
                                 final hour = dateTime.hour;
                                 final period = hour >= 12 ? 'PM' : 'AM';
-                                final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-                                final formattedTime = '${displayHour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $period';
+                                final displayHour = hour == 0
+                                    ? 12
+                                    : (hour > 12 ? hour - 12 : hour);
+                                final formattedTime =
+                                    '${displayHour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $period';
 
                                 return Container(
                                   width: 260,
@@ -484,14 +504,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         context.primaryColor.withOpacity(0.05),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.xl,
+                                    ),
                                     border: Border.all(
-                                      color: context.primaryColor.withOpacity(0.2),
+                                      color: context.primaryColor.withOpacity(
+                                        0.2,
+                                      ),
                                       width: 1,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: context.primaryColor.withOpacity(0.08),
+                                        color: context.primaryColor.withOpacity(
+                                          0.08,
+                                        ),
                                         blurRadius: 20,
                                         offset: const Offset(0, 4),
                                       ),
@@ -514,7 +540,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             ),
                                             child: CircleAvatar(
                                               radius: 26,
-                                              backgroundColor: context.primaryColor.withOpacity(0.1),
+                                              backgroundColor: context
+                                                  .primaryColor
+                                                  .withOpacity(0.1),
                                               backgroundImage:
                                                   patient['profile_picture_url'] !=
                                                       null
@@ -528,10 +556,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                   ? Text(
                                                       patient['full_name'][0]
                                                           .toUpperCase(),
-                                                      style: AppTextStyles.h3.copyWith(
-                                                        color: context.primaryColor,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
+                                                      style: AppTextStyles.h3
+                                                          .copyWith(
+                                                            color: context
+                                                                .primaryColor,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
                                                     )
                                                   : null,
                                             ),
@@ -539,36 +570,46 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           const SizedBox(width: AppSpacing.sm),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   patient['full_name'],
-                                                  style: AppTextStyles.h4.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  style: AppTextStyles.h4
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2,
+                                                      ),
                                                   decoration: BoxDecoration(
-                                                    color: context.primaryColor.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(
-                                                      AppRadius.sm,
-                                                    ),
+                                                    color: context.primaryColor
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          AppRadius.sm,
+                                                        ),
                                                   ),
                                                   child: Text(
                                                     consultation['consultation_type']
                                                         .toString()
                                                         .toUpperCase(),
-                                                    style: AppTextStyles.caption.copyWith(
-                                                      color: context.primaryColor,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 10,
-                                                    ),
+                                                    style: AppTextStyles.caption
+                                                        .copyWith(
+                                                          color: context
+                                                              .primaryColor,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 10,
+                                                        ),
                                                   ),
                                                 ),
                                               ],
@@ -576,16 +617,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: AppSpacing.md),
+                                      const SizedBox(height: AppSpacing.sm),
                                       // Date information
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: AppSpacing.sm,
-                                          vertical: AppSpacing.xs + 2,
+                                          vertical: AppSpacing.xs,
                                         ),
                                         decoration: BoxDecoration(
                                           color: context.greyLight,
-                                          borderRadius: BorderRadius.circular(AppRadius.md),
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.md,
+                                          ),
                                         ),
                                         child: Row(
                                           children: [
@@ -597,21 +640,26 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             const SizedBox(width: 6),
                                             Text(
                                               'Date:',
-                                              style: AppTextStyles.caption.copyWith(
-                                                color: context.textSecondary,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 11,
-                                              ),
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                    color:
+                                                        context.textSecondary,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 11,
+                                                  ),
                                             ),
                                             const SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
                                                 formattedDate,
-                                                style: AppTextStyles.bodySmall.copyWith(
-                                                  color: context.textPrimary,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 11,
-                                                ),
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                      color:
+                                                          context.textPrimary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 11,
+                                                    ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
@@ -623,11 +671,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: AppSpacing.sm,
-                                          vertical: AppSpacing.xs + 2,
+                                          vertical: AppSpacing.xs,
                                         ),
                                         decoration: BoxDecoration(
                                           color: context.greyLight,
-                                          borderRadius: BorderRadius.circular(AppRadius.md),
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.md,
+                                          ),
                                         ),
                                         child: Row(
                                           children: [
@@ -639,26 +689,28 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             const SizedBox(width: 6),
                                             Text(
                                               'Time:',
-                                              style: AppTextStyles.caption.copyWith(
-                                                color: context.textSecondary,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 11,
-                                              ),
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                    color:
+                                                        context.textSecondary,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 11,
+                                                  ),
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
                                               formattedTime,
-                                              style: AppTextStyles.bodySmall.copyWith(
-                                                color: context.textPrimary,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 11,
-                                              ),
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
+                                                    color: context.textPrimary,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 11,
+                                                  ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(height: AppSpacing.sm),
-                                      const Spacer(),
+                                      const SizedBox(height: AppSpacing.md),
                                       if (consultation['consultation_type'] ==
                                           'video')
                                         SizedBox(
@@ -677,20 +729,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               );
                                             },
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: context.primaryColor,
-                                              foregroundColor: context.onPrimary,
+                                              backgroundColor:
+                                                  context.primaryColor,
+                                              foregroundColor:
+                                                  context.onPrimary,
                                               elevation: 0,
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(
-                                                  AppRadius.md,
-                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.md,
+                                                    ),
                                               ),
                                             ),
                                             child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 const Icon(
                                                   Icons.video_call_rounded,
@@ -699,7 +756,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'Join Call',
-                                                  style: AppTextStyles.buttonSmall,
+                                                  style:
+                                                      AppTextStyles.buttonSmall,
                                                 ),
                                               ],
                                             ),
@@ -778,7 +836,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   // Statistics consumer
                   Consumer(
                     builder: (context, ref, _) {
-                      final statisticsAsync = ref.watch(doctorStatisticsProvider);
+                      final statisticsAsync = ref.watch(
+                        doctorStatisticsProvider,
+                      );
                       final doctor = ref.watch(doctorProfileProvider).value;
 
                       // Load statistics when doctor is available
@@ -797,7 +857,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       return statisticsAsync.when(
                         data: (stats) {
                           final totalPatients = stats['totalPatients'] ?? 0;
-                          final scheduledConsultations = stats['scheduledConsultations'] ?? 0;
+                          final scheduledConsultations =
+                              stats['scheduledConsultations'] ?? 0;
                           final totalEarnings = stats['totalEarnings'] ?? 0.0;
 
                           return Column(
@@ -908,9 +969,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         },
         loading: () => Center(
-          child: CircularProgressIndicator(
-            color: context.primaryColor,
-          ),
+          child: CircularProgressIndicator(color: context.primaryColor),
         ),
         error: (error, stack) => Container(
           color: context.background,
@@ -990,10 +1049,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           children: [
                             const Icon(Icons.refresh_rounded, size: 20),
                             const SizedBox(width: 8),
-                            Text(
-                              'Retry',
-                              style: AppTextStyles.button,
-                            ),
+                            Text('Retry', style: AppTextStyles.button),
                           ],
                         ),
                       ),
@@ -1029,84 +1085,86 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: isFullWidth
-          ? Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+            ? Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(icon, color: color, size: 28),
                   ),
-                  child: Icon(icon, color: color, size: 28),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
+                        const SizedBox(height: AppSpacing.xs),
+                        Container(
+                          width: 120,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.greyLight,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
                       Container(
-                        width: 120,
-                        height: 28,
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
-                          color: AppColors.greyLight,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Icon(icon, color: color, size: 22),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Icon(icon, color: color, size: 22),
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    width: 60,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.greyLight,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Container(
-                  width: 60,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AppColors.greyLight,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
       ),
     );
-  }  Widget _buildStatCard({
+  }
+
+  Widget _buildStatCard({
     required IconData icon,
     required String title,
     required String value,
@@ -1127,110 +1185,106 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       child: Padding(
         padding: EdgeInsets.all(isFullWidth ? AppSpacing.lg : AppSpacing.lg),
-        child: isFullWidth 
-          ? Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+        child: isFullWidth
+            ? Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(icon, color: color, size: 28),
                   ),
-                  child: Icon(icon, color: color, size: 28),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          value,
+                          style: AppTextStyles.h2.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 28,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.trending_up_rounded, size: 14, color: color),
+                        const SizedBox(width: 4),
+                        Text(
+                          'All time',
+                          style: AppTextStyles.caption.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Icon(icon, color: color, size: 22),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        value,
-                        style: AppTextStyles.h2.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.trending_up_rounded,
-                        size: 14,
-                        color: color,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'All time',
-                        style: AppTextStyles.caption.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Icon(icon, color: color, size: 22),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    value,
+                    style: AppTextStyles.h2.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  value,
-                  style: AppTextStyles.h2.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
       ),
     );
   }
