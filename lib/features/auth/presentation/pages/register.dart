@@ -18,12 +18,50 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final fullNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final phoneController = TextEditingController();
   final dobController = TextEditingController();
 
   String role = 'doctor';
   String? gender;
   bool loading = false;
+  bool _isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to all controllers to check form validity
+    fullNameController.addListener(_checkFormValidity);
+    emailController.addListener(_checkFormValidity);
+    passwordController.addListener(_checkFormValidity);
+    confirmPasswordController.addListener(_checkFormValidity);
+    phoneController.addListener(_checkFormValidity);
+    dobController.addListener(_checkFormValidity);
+  }
+
+  @override
+  void dispose() {
+    fullNameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    phoneController.dispose();
+    dobController.dispose();
+    super.dispose();
+  }
+
+  void _checkFormValidity() {
+    setState(() {
+      _isFormValid = fullNameController.text.trim().isNotEmpty &&
+          emailController.text.trim().isNotEmpty &&
+          passwordController.text.trim().length >= 8 &&
+          confirmPasswordController.text.trim().isNotEmpty &&
+          passwordController.text == confirmPasswordController.text &&
+          phoneController.text.trim().isNotEmpty &&
+          gender != null &&
+          dobController.text.trim().isNotEmpty;
+    });
+  }
 
   Future<void> registerUser() async {
     if (!_formKey.currentState!.validate()) return;
@@ -44,13 +82,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       final user = authResponse.user;
       if (user == null) throw const AuthException('User creation failed');
 
-      print('✅ Auth user created: ${user.id}');
 
       // Step 2: Wait for auth to fully process
       await Future.delayed(const Duration(milliseconds: 1000));
 
-      // Step 3: Create user record in users table with service role
-      print('🔵 Creating user record in users table...');
 
       final userInsert = await supabase.from('users').insert({
         'auth_id': user.id,
@@ -90,7 +125,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Registration successful! Please complete your profile after login.',
+            'Registration successful! Please confirm your email before Log In.',
           ),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 4),
@@ -99,7 +134,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
       context.pop(); // back to login
     } on AuthException catch (e) {
-      print('❌ Auth Error: ${e.message}');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,9 +143,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         ),
       );
     } on PostgrestException catch (e) {
-      print('❌ Database Error: ${e.message}');
-      print('Details: ${e.details}');
-      print('Hint: ${e.hint}');
 
       if (!mounted) return;
 
@@ -155,7 +186,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         );
       }
     } catch (e) {
-      print('❌ Unexpected Error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -221,6 +251,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 const SizedBox(height: 16),
 
+                // Confirm Password
+                _buildInputField(
+                  controller: confirmPasswordController,
+                  label: 'Confirm Password',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (v != passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // Phone
                 _buildInputField(
                   controller: phoneController,
@@ -241,7 +289,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     DropdownMenuItem(value: 'Female', child: Text('Female')),
                     DropdownMenuItem(value: 'Other', child: Text('Other')),
                   ],
-                  onChanged: (val) => setState(() => gender = val),
+                  onChanged: (val) {
+                    setState(() => gender = val);
+                    _checkFormValidity();
+                  },
                   validator: (val) =>
                       val == null ? 'Please select gender' : null,
                 ),
@@ -267,6 +318,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       dobController.text = pickedDate.toIso8601String().split(
                         'T',
                       )[0];
+                      _checkFormValidity();
                     }
                   },
                   validator: (v) => v == null || v.isEmpty
@@ -280,21 +332,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: loading ? null : registerUser,
+                    onPressed: loading || !_isFormValid ? null : registerUser,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.dark_blue,
+                      disabledBackgroundColor: Colors.grey.shade400,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: loading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
+                        : Text(
                             'Sign up',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: _isFormValid ? Colors.white : Colors.grey.shade600,
                             ),
                           ),
                   ),

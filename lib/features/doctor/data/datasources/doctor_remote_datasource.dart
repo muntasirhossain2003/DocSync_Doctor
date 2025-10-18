@@ -363,6 +363,84 @@ class DoctorRemoteDataSource {
     }
   }
 
+  /// Get total number of unique patients for a doctor
+  Future<int> getTotalPatientsCount(String doctorId) async {
+    try {
+      final response = await supabaseClient
+          .from('consultations')
+          .select('patient_id')
+          .eq('doctor_id', doctorId);
+
+      // Get unique patient IDs
+      final uniquePatients = <String>{};
+      for (var consultation in response) {
+        final patientId = consultation['patient_id'] as String?;
+        if (patientId != null) {
+          uniquePatients.add(patientId);
+        }
+      }
+
+      return uniquePatients.length;
+    } catch (e) {
+      throw Exception('Failed to fetch total patients count: $e');
+    }
+  }
+
+  /// Get count of scheduled consultations for a doctor
+  Future<int> getScheduledConsultationsCount(String doctorId) async {
+    try {
+      final response = await supabaseClient
+          .from('consultations')
+          .select('id')
+          .eq('doctor_id', doctorId)
+          .eq('consultation_status', 'scheduled');
+
+      return response.length;
+    } catch (e) {
+      throw Exception('Failed to fetch scheduled consultations count: $e');
+    }
+  }
+
+  /// Get total earnings for a doctor from consultation payments
+  Future<double> getTotalEarnings(String doctorId) async {
+    try {
+      // Get all consultations for this doctor
+      final consultationsResponse = await supabaseClient
+          .from('consultations')
+          .select('id')
+          .eq('doctor_id', doctorId);
+
+      if (consultationsResponse.isEmpty) {
+        return 0.0;
+      }
+
+      // Extract consultation IDs
+      final consultationIds = consultationsResponse
+          .map((c) => c['id'] as String)
+          .toList();
+
+      // Get all payments for these consultations with status 'completed'
+      final paymentsResponse = await supabaseClient
+          .from('consultation_payments')
+          .select('amount')
+          .inFilter('consultation_id', consultationIds)
+          .eq('payment_status', 'completed');
+
+      // Sum up all amounts
+      double totalEarnings = 0.0;
+      for (var payment in paymentsResponse) {
+        final amount = payment['amount'];
+        if (amount != null) {
+          totalEarnings += (amount is int) ? amount.toDouble() : amount as double;
+        }
+      }
+
+      return totalEarnings;
+    } catch (e) {
+      throw Exception('Failed to fetch total earnings: $e');
+    }
+  }
+
   /// Generate default availability schedule (9 AM - 5 PM, Monday to Friday)
   Map<String, dynamic> _generateDefaultAvailability() {
     return {

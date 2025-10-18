@@ -113,3 +113,48 @@ class GetCancelledConsultations {
   }
 
 }
+
+/// Use case to get total patients count
+class GetTotalPatientsCount {
+  final DoctorRepository repository;
+
+  GetTotalPatientsCount(this.repository);
+
+  Future<int> call(String doctorId) async {
+    try {
+      return await repository.getTotalPatientsCount(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch total patients count: $e');
+    }
+  }
+}
+
+/// Use case to get scheduled consultations count
+class GetScheduledConsultationsCount {
+  final DoctorRepository repository;
+
+  GetScheduledConsultationsCount(this.repository);
+
+  Future<int> call(String doctorId) async {
+    try {
+      return await repository.getScheduledConsultationsCount(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch scheduled consultations count: $e');
+    }
+  }
+}
+
+/// Use case to get total earnings
+class GetTotalEarnings {
+  final DoctorRepository repository;
+
+  GetTotalEarnings(this.repository);
+
+  Future<double> call(String doctorId) async {
+    try {
+      return await repository.getTotalEarnings(doctorId);
+    } catch (e) {
+      throw Exception('Failed to fetch total earnings: $e');
+    }
+  }
+}

@@ -23,6 +23,15 @@ abstract class DoctorRepository {
  Future<List<Map<String, dynamic>>> getCompletedConsultations(String doctorId);
 
  Future<List<Map<String, dynamic>>> getCancelledConsultations(String doctorId);
+
+  /// Get total number of unique patients for a doctor
+  Future<int> getTotalPatientsCount(String doctorId);
+
+  /// Get count of scheduled consultations for a doctor
+  Future<int> getScheduledConsultationsCount(String doctorId);
+
+  /// Get total earnings for a doctor
+  Future<double> getTotalEarnings(String doctorId);
   
 
   /// Update doctor availability status

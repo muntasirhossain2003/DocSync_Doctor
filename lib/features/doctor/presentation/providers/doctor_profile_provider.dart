@@ -316,3 +316,60 @@ final cancelledConsultationsProvider =
       final useCase = ref.watch(getCancelledConsultationsUseCaseProvider);
       return CancelledConsultationsNotifier(getCancelledConsultations: useCase);
     });
+
+// Statistics use case providers
+final getTotalPatientsCountUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetTotalPatientsCount(repository);
+});
+
+final getScheduledConsultationsCountUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetScheduledConsultationsCount(repository);
+});
+
+final getTotalEarningsUseCaseProvider = Provider((ref) {
+  final repository = ref.watch(doctorRepositoryProvider);
+  return GetTotalEarnings(repository);
+});
+
+// Doctor statistics notifier
+class DoctorStatisticsNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
+  final GetTotalPatientsCount getTotalPatientsCount;
+  final GetScheduledConsultationsCount getScheduledConsultationsCount;
+  final GetTotalEarnings getTotalEarnings;
+
+  DoctorStatisticsNotifier({
+    required this.getTotalPatientsCount,
+    required this.getScheduledConsultationsCount,
+    required this.getTotalEarnings,
+  }) : super(const AsyncValue.loading());
+
+  Future<void> load(String doctorId) async {
+    state = const AsyncValue.loading();
+
+    try {
+      final totalPatients = await getTotalPatientsCount(doctorId);
+      final scheduledConsultations = await getScheduledConsultationsCount(doctorId);
+      final totalEarnings = await getTotalEarnings(doctorId);
+
+      state = AsyncValue.data({
+        'totalPatients': totalPatients,
+        'scheduledConsultations': scheduledConsultations,
+        'totalEarnings': totalEarnings,
+      });
+    } catch (e, st) {
+      state = AsyncValue.error(e.toString(), st);
+    }
+  }
+}
+
+// Doctor statistics provider
+final doctorStatisticsProvider =
+    StateNotifierProvider<DoctorStatisticsNotifier, AsyncValue<Map<String, dynamic>>>((ref) {
+  return DoctorStatisticsNotifier(
+    getTotalPatientsCount: ref.watch(getTotalPatientsCountUseCaseProvider),
+    getScheduledConsultationsCount: ref.watch(getScheduledConsultationsCountUseCaseProvider),
+    getTotalEarnings: ref.watch(getTotalEarningsUseCaseProvider),
+  );
+});
