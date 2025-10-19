@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_theme.dart';
 import '../providers/doctor_profile_provider.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -18,11 +19,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final doctorProfile = ref.watch(doctorProfileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+    final secondaryTextColor = isDark
+        ? Colors.grey[400]
+        : AppColors.textSecondary;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -41,7 +47,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ),
         title: Text(
           'Profile',
-          style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+          style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
         actions: [
           Container(
@@ -68,13 +77,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         data: (doctor) {
           if (doctor == null) {
             return Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primaryLight, Colors.white],
-                ),
-              ),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
@@ -82,7 +85,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     constraints: const BoxConstraints(maxWidth: 400),
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppRadius.xxl),
                       boxShadow: [
                         BoxShadow(
@@ -177,22 +180,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          AppColors.primaryLight.withOpacity(0.3),
-                        ],
-                      ),
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2),
+                        color: isDark
+                            ? Colors.grey[800]!
+                            : AppColors.primary.withOpacity(0.2),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.08),
+                          color: isDark
+                              ? Colors.black26
+                              : AppColors.primary.withOpacity(0.08),
                           blurRadius: 20,
                           offset: const Offset(0, 4),
                         ),
@@ -249,6 +249,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           'Dr. ${doctor.fullName}',
                           style: AppTextStyles.h2.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: textColor,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -415,14 +416,75 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                   const SizedBox(height: AppSpacing.md),
 
+                  // Availability Section
+                  _buildInfoCard(
+                    title: 'Availability',
+                    titleIcon: Icons.schedule_rounded,
+                    children: [
+                      _buildInfoRow(
+                        icon: Icons.access_time_rounded,
+                        label: 'Status',
+                        value: doctor.isAvailable ? 'Available' : 'Unavailable',
+                        valueColor: doctor.isAvailable
+                            ? AppColors.success
+                            : AppColors.error,
+                        isLast: false,
+                      ),
+                      _buildInfoRow(
+                        icon: Icons.wifi_rounded,
+                        label: 'Online Status',
+                        value: doctor.isOnline ? 'Online' : 'Offline',
+                        valueColor: doctor.isOnline
+                            ? AppColors.success
+                            : AppColors.textSecondary,
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Statistics Section
+                  _buildInfoCard(
+                    title: 'Statistics',
+                    titleIcon: Icons.analytics_rounded,
+                    children: [
+                      _buildInfoRow(
+                        icon: Icons.people_rounded,
+                        label: 'Total Patients',
+                        value: '156', // TODO: Get from backend
+                        isLast: false,
+                      ),
+                      _buildInfoRow(
+                        icon: Icons.video_call_rounded,
+                        label: 'Consultations',
+                        value: '234', // TODO: Get from backend
+                        isLast: false,
+                      ),
+                      _buildInfoRow(
+                        icon: Icons.star_rounded,
+                        label: 'Rating',
+                        value: '4.8 ⭐',
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
                   if (doctor.bio != null && doctor.bio!.isNotEmpty)
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(AppRadius.xl),
+                        border: isDark
+                            ? Border.all(color: Colors.grey[800]!, width: 1)
+                            : null,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.grey.withOpacity(0.08),
+                            color: isDark
+                                ? Colors.black26
+                                : AppColors.grey.withOpacity(0.08),
                             blurRadius: 20,
                             offset: const Offset(0, 4),
                           ),
@@ -438,7 +500,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 Container(
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryLight,
+                                    color: isDark
+                                        ? AppColors.primary.withOpacity(0.2)
+                                        : AppColors.primaryLight,
                                     borderRadius: BorderRadius.circular(
                                       AppRadius.md,
                                     ),
@@ -454,6 +518,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   'About',
                                   style: AppTextStyles.h4.copyWith(
                                     fontWeight: FontWeight.bold,
+                                    color: textColor,
                                   ),
                                 ),
                               ],
@@ -464,15 +529,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             margin: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.md,
                             ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  AppColors.border.withOpacity(0.5),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
+                            color: isDark
+                                ? Colors.grey[800]
+                                : AppColors.border.withOpacity(0.3),
                           ),
                           Padding(
                             padding: const EdgeInsets.all(AppSpacing.md),
@@ -480,6 +539,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               doctor.bio!,
                               style: AppTextStyles.bodyMedium.copyWith(
                                 height: 1.6,
+                                color: textColor,
                               ),
                             ),
                           ),
@@ -492,11 +552,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   // Settings and actions
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: isDark
+                          ? Border.all(color: Colors.grey[800]!, width: 1)
+                          : null,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.grey.withOpacity(0.08),
+                          color: isDark
+                              ? Colors.black26
+                              : AppColors.grey.withOpacity(0.08),
                           blurRadius: 20,
                           offset: const Offset(0, 4),
                         ),
@@ -509,9 +574,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           iconColor: AppColors.info,
                           title: 'Settings',
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Settings coming soon!'),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SettingsPage(),
                               ),
                             );
                           },
@@ -521,7 +587,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           margin: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
                           ),
-                          color: AppColors.border.withOpacity(0.3),
+                          color: isDark
+                              ? Colors.grey[800]
+                              : AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
                           icon: Icons.help_rounded,
@@ -540,7 +608,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           margin: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
                           ),
-                          color: AppColors.border.withOpacity(0.3),
+                          color: isDark
+                              ? Colors.grey[800]
+                              : AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
                           icon: Icons.privacy_tip_rounded,
@@ -559,7 +629,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           margin: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
                           ),
-                          color: AppColors.border.withOpacity(0.3),
+                          color: isDark
+                              ? Colors.grey[800]
+                              : AppColors.border.withOpacity(0.3),
                         ),
                         _buildActionTile(
                           icon: Icons.logout_rounded,
@@ -581,22 +653,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.greyLight,
+                      color: isDark ? Colors.grey[850] : AppColors.greyLight,
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.info_outline_rounded,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: secondaryTextColor,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'DocSync Doctor v1.0.0',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
+                            color: secondaryTextColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -710,13 +782,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required IconData titleIcon,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: isDark ? Border.all(color: Colors.grey[800]!, width: 1) : null,
         boxShadow: [
           BoxShadow(
-            color: AppColors.grey.withOpacity(0.08),
+            color: isDark ? Colors.black26 : AppColors.grey.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -733,7 +809,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: isDark
+                        ? AppColors.primary.withOpacity(0.2)
+                        : AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Icon(titleIcon, color: AppColors.primary, size: 20),
@@ -741,7 +819,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   title,
-                  style: AppTextStyles.h4.copyWith(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.h4.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
               ],
             ),
@@ -750,15 +831,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  AppColors.border.withOpacity(0.5),
-                  Colors.transparent,
-                ],
-              ),
-            ),
+            color: isDark
+                ? Colors.grey[800]
+                : AppColors.border.withOpacity(0.3),
           ),
           // Content
           Padding(
@@ -775,7 +850,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required String label,
     required String value,
     bool isLast = false,
+    Color? valueColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+    final secondaryTextColor = isDark
+        ? Colors.grey[400]
+        : AppColors.textSecondary;
+
     return Column(
       children: [
         Padding(
@@ -792,7 +874,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     Text(
                       label,
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -801,6 +883,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       value,
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
+                        color: valueColor ?? textColor,
                       ),
                     ),
                   ],
@@ -813,7 +896,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Container(
             height: 1,
             margin: const EdgeInsets.only(left: AppSpacing.lg + 8),
-            color: AppColors.border.withOpacity(0.3),
+            color: isDark
+                ? Colors.grey[800]
+                : AppColors.border.withOpacity(0.3),
           ),
       ],
     );
@@ -826,6 +911,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     Color? titleColor,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+    final secondaryTextColor = isDark
+        ? Colors.grey[400]
+        : AppColors.textSecondary;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -841,7 +932,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withOpacity(isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(icon, color: iconColor, size: 22),
@@ -852,14 +943,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   title,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: titleColor ?? AppColors.textPrimary,
+                    color: titleColor ?? textColor,
                   ),
                 ),
               ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: titleColor ?? AppColors.textSecondary,
+                color: titleColor ?? secondaryTextColor,
               ),
             ],
           ),

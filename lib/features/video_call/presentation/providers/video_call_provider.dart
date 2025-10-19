@@ -36,6 +36,8 @@ class VideoCallNotifier extends StateNotifier<CallState> {
     String? patientImageUrl,
   }) async {
     try {
+      print('📞 Starting call for consultation: $consultationId');
+
       state = state.copyWith(
         callId: consultationId,
         patientId: patientId,
@@ -45,11 +47,16 @@ class VideoCallNotifier extends StateNotifier<CallState> {
       );
 
       // Initialize Agora
+      print('🔧 Checking Agora initialization...');
       if (!_agoraService.isInitialized) {
+        print('🔧 Agora not initialized, initializing now...');
         await _agoraService.initialize();
+      } else {
+        print('✅ Agora already initialized');
       }
 
       // Register event handlers
+      print('🔧 Registering event handlers...');
       _agoraService.registerEventHandlers(
         onJoinChannelSuccess: _onJoinChannelSuccess,
         onUserJoined: _onUserJoined,
@@ -60,20 +67,26 @@ class VideoCallNotifier extends StateNotifier<CallState> {
 
       // Join the channel
       final uid = DateTime.now().millisecondsSinceEpoch % 100000;
+      print('🔗 Joining channel with UID: $uid');
       await _agoraService.joinChannel(
         state.channelName,
         AgoraConfig.token,
         uid,
       );
+
+      print('✅ Call started successfully');
     } catch (e) {
+      print('❌ Failed to start call: $e');
       state = state.copyWith(status: CallStatus.failed);
-      print('Failed to start call: $e');
       rethrow;
     }
   }
 
   /// Handle successful channel join
   void _onJoinChannelSuccess(RtcConnection connection, int elapsed) {
+    print('✅ Successfully joined channel: ${connection.channelId}');
+    print('   Connection stats - elapsed: ${elapsed}ms');
+
     state = state.copyWith(
       status: CallStatus.connected,
       startTime: DateTime.now(),
@@ -83,6 +96,7 @@ class VideoCallNotifier extends StateNotifier<CallState> {
 
   /// Handle remote user joined
   void _onUserJoined(RtcConnection connection, int remoteUid, int elapsed) {
+    print('👤 Remote user joined: $remoteUid');
     state = state.copyWith(remoteUid: remoteUid);
   }
 
@@ -92,6 +106,7 @@ class VideoCallNotifier extends StateNotifier<CallState> {
     int remoteUid,
     UserOfflineReasonType reason,
   ) {
+    print('👋 Remote user left: $remoteUid (reason: $reason)');
     if (state.remoteUid == remoteUid) {
       state = state.copyWith(remoteUid: null);
     }
@@ -99,12 +114,14 @@ class VideoCallNotifier extends StateNotifier<CallState> {
 
   /// Handle errors
   void _onError(ErrorCodeType err, String msg) {
-    print('Agora Error: $err - $msg');
+    print('❌ Agora Error: $err - $msg');
     state = state.copyWith(status: CallStatus.failed);
   }
 
   /// Handle leave channel
   void _onLeaveChannel(RtcConnection connection, RtcStats stats) {
+    print('📴 Left channel: ${connection.channelId}');
+    print('   Call duration: ${stats.duration} seconds');
     state = state.copyWith(status: CallStatus.disconnected, remoteUid: null);
     _stopDurationTimer();
   }

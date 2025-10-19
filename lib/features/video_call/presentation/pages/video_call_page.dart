@@ -2,8 +2,11 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../../doctor/presentation/providers/doctor_profile_provider.dart';
+import '../../../prescriptions/presentation/pages/create_prescription_page.dart';
 import '../../domain/models/call_state.dart';
 import '../providers/video_call_provider.dart';
 import '../widgets/video_call_controls.dart';
@@ -32,6 +35,8 @@ class VideoCallPage extends ConsumerStatefulWidget {
 class _VideoCallPageState extends ConsumerState<VideoCallPage> {
   bool _isInitialized = false;
   bool _isEnding = false;
+  String? _resolvedPatientId;
+  String? _resolvedPatientName;
 
   @override
   void initState() {
@@ -39,7 +44,8 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
     WakelockPlus.enable(); // Keep screen awake during call
 
     // Initialize call after the first frame to avoid modifying provider during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _fetchConsultationData();
       _initializeCall();
 
       // Listen for call state changes
@@ -67,8 +73,59 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
     }
   }
 
+  Future<void> _fetchConsultationData() async {
+    try {
+      print('🔍 Fetching consultation data for: ${widget.consultationId}');
+
+      final response = await Supabase.instance.client
+          .from('consultations')
+          .select('patient_id')
+          .eq('id', widget.consultationId)
+          .maybeSingle();
+
+      print('🔍 Raw consultation response: $response');
+
+      if (response != null && mounted) {
+        final patId = response['patient_id'] as String?;
+
+        setState(() {
+          _resolvedPatientId = patId;
+        });
+        print('✅ Resolved patient ID: $_resolvedPatientId');
+
+        // Fetch patient name separately if needed
+        if (patId != null) {
+          try {
+            final patientResponse = await Supabase.instance.client
+                .from('patients')
+                .select('full_name')
+                .eq('id', patId)
+                .maybeSingle();
+
+            if (patientResponse != null && mounted) {
+              setState(() {
+                _resolvedPatientName = patientResponse['full_name'] as String?;
+              });
+              print('✅ Resolved patient name: $_resolvedPatientName');
+            }
+          } catch (e) {
+            print('⚠️ Could not fetch patient name: $e');
+            // Continue without patient name, it's optional
+          }
+        }
+      } else {
+        print('⚠️ Consultation response is null');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Failed to fetch consultation data: $e');
+      print('Stack trace: $stackTrace');
+    }
+  }
+
   Future<void> _initializeCall() async {
     try {
+      print('📞 Initializing call for consultation: ${widget.consultationId}');
+
       await ref
           .read(videoCallProvider.notifier)
           .startCall(
@@ -77,18 +134,26 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
             patientName: widget.patientName,
             patientImageUrl: widget.patientImageUrl,
           );
+
       if (mounted) {
         setState(() => _isInitialized = true);
+        print('✅ Call initialization complete');
       }
     } catch (e) {
+      print('❌ Call initialization failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to start call: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
-        Navigator.of(context).pop();
+        // Wait a moment before popping so user can see the error
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       }
     }
   }
@@ -139,8 +204,82 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Back button
+                      // Create Prescription button
                       ElevatedButton.icon(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          var doctor = ref.read(doctorProfileProvider).value;
+
+                          if (doctor?.id == null) {
+                            final authId =
+                                Supabase.instance.client.auth.currentUser?.id;
+                            if (authId != null) {
+                              try {
+                                await ref
+                                    .read(doctorProfileProvider.notifier)
+                                    .loadProfile(authId);
+                              } catch (e, st) {
+                                print(
+                                  '❌ Failed to load doctor profile before prescription: $e',
+                                );
+                                print('Stack trace: $st');
+                              }
+                              doctor = ref.read(doctorProfileProvider).value;
+                            }
+                          }
+
+                          // Use resolved patient ID if widget.patientId is missing
+                          final patientId =
+                              widget.patientId ?? _resolvedPatientId;
+                          final patientName =
+                              widget.patientName ?? _resolvedPatientName;
+
+                          print('🩺 Prescription button pressed:');
+                          print('   - widget.patientId: ${widget.patientId}');
+                          print('   - _resolvedPatientId: $_resolvedPatientId');
+                          print('   - final patientId: $patientId');
+                          print('   - doctor ID: ${doctor?.id}');
+
+                          if (doctor?.id == null ||
+                              (patientId?.isEmpty ?? true)) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Cannot create prescription. Doctor or Patient ID is missing.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (!mounted) return;
+
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CreatePrescriptionPage(
+                                consultationId: widget.consultationId,
+                                patientId: patientId!,
+                                doctorId: doctor!.id,
+                                patientName: patientName,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.medication),
+                        label: const Text('Create Prescription'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Back button
+                      OutlinedButton.icon(
                         onPressed: () {
                           if (mounted && Navigator.canPop(context)) {
                             Navigator.of(context).pop();
@@ -148,7 +287,7 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
                         },
                         icon: const Icon(Icons.arrow_back),
                         label: const Text('Go Back'),
-                        style: ElevatedButton.styleFrom(
+                        style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 32,
                             vertical: 12,
@@ -382,10 +521,44 @@ class _VideoCallPageState extends ConsumerState<VideoCallPage> {
 
     setState(() => _isEnding = true);
 
-    // End call
-    await ref.read(videoCallProvider.notifier).endCall();
+    try {
+      // End call
+      await ref.read(videoCallProvider.notifier).endCall();
+
+      // Mark consultation as completed
+      await _markConsultationCompleted();
+    } catch (e) {
+      print('Error ending call: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error ending call: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
 
     // Navigation will be handled by the listener in initState
+  }
+
+  /// Mark consultation as completed in the database
+  Future<void> _markConsultationCompleted() async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('consultations')
+          .update({
+            'consultation_status': 'completed',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', widget.consultationId);
+
+      print('✅ Consultation ${widget.consultationId} marked as completed');
+    } catch (e) {
+      print('❌ Failed to mark consultation as completed: $e');
+      // Don't throw - we still want to end the call even if this fails
+    }
   }
 
   Future<bool?> _showEndCallDialog() {

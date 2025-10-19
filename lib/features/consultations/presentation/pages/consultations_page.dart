@@ -167,9 +167,7 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
             );
           },
           loading: () => const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primary,
-            ),
+            child: CircularProgressIndicator(color: AppColors.primary),
           ),
           error: (error, stack) => _buildErrorState(error.toString()),
         );
@@ -179,7 +177,7 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
 
   Widget _buildEmptyState(String status) {
     final config = _getStatusConfig(status);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -206,18 +204,12 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                   color: config['color'].withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  config['icon'],
-                  size: 64,
-                  color: config['color'],
-                ),
+                child: Icon(config['icon'], size: 64, color: config['color']),
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'No ${status.capitalize()} Consultations',
-                style: AppTextStyles.h2.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -271,9 +263,7 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Error Loading Data',
-                style: AppTextStyles.h2.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -296,23 +286,36 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
     required BuildContext context,
   }) {
     final patient = consultation['patient'];
-    final dateTime = DateTime.parse(consultation['scheduled_time']);
+    // Parse as UTC and convert to local time
+    final dateTime = DateTime.parse(consultation['scheduled_time']).toLocal();
     final consultationType = consultation['consultation_type'];
     final consultationStatus = consultation['consultation_status'];
-    
+
     // Format date and time
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
-    final formattedDate = '${dateTime.day} ${months[dateTime.month - 1]}, ${dateTime.year}';
-    
+    final formattedDate =
+        '${dateTime.day} ${months[dateTime.month - 1]}, ${dateTime.year}';
+
     // Format time with AM/PM
     final hour = dateTime.hour;
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-    final formattedTime = '${displayHour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $period';
-    
+    final formattedTime =
+        '${displayHour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $period';
+
     final statusConfig = _getStatusConfig(status);
     final typeConfig = _getTypeConfig(consultationType);
 
@@ -404,7 +407,9 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                                 ),
                                 decoration: BoxDecoration(
                                   color: statusConfig['color'].withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                 ),
                                 child: Text(
                                   consultationStatus.toString().toUpperCase(),
@@ -423,7 +428,9 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                                 ),
                                 decoration: BoxDecoration(
                                   color: typeConfig['color'].withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -469,7 +476,8 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                               extra: {
                                 'patientId': patient['id'],
                                 'patientName': patient['full_name'],
-                                'patientImageUrl': patient['profile_picture_url'],
+                                'patientImageUrl':
+                                    patient['profile_picture_url'],
                               },
                             );
                           },
@@ -537,11 +545,7 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: AppColors.textSecondary,
-              ),
+              Icon(icon, size: 14, color: AppColors.textSecondary),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -575,19 +579,22 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
         return {
           'color': AppColors.primary,
           'icon': Icons.schedule_rounded,
-          'emptyMessage': 'No upcoming appointments scheduled.\nNew consultations will appear here.',
+          'emptyMessage':
+              'No upcoming appointments scheduled.\nNew consultations will appear here.',
         };
       case 'completed':
         return {
           'color': AppColors.success,
           'icon': Icons.check_circle_rounded,
-          'emptyMessage': 'No completed consultations yet.\nCompleted appointments will appear here.',
+          'emptyMessage':
+              'No completed consultations yet.\nCompleted appointments will appear here.',
         };
       case 'cancelled':
         return {
           'color': AppColors.error,
           'icon': Icons.cancel_rounded,
-          'emptyMessage': 'No cancelled consultations.\nCancelled appointments will appear here.',
+          'emptyMessage':
+              'No cancelled consultations.\nCancelled appointments will appear here.',
         };
       default:
         return {
@@ -601,25 +608,13 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
   Map<String, dynamic> _getTypeConfig(String type) {
     switch (type) {
       case 'video':
-        return {
-          'color': AppColors.primary,
-          'icon': Icons.videocam_rounded,
-        };
+        return {'color': AppColors.primary, 'icon': Icons.videocam_rounded};
       case 'audio':
-        return {
-          'color': AppColors.secondary,
-          'icon': Icons.phone_rounded,
-        };
+        return {'color': AppColors.secondary, 'icon': Icons.phone_rounded};
       case 'chat':
-        return {
-          'color': AppColors.info,
-          'icon': Icons.chat_rounded,
-        };
+        return {'color': AppColors.info, 'icon': Icons.chat_rounded};
       default:
-        return {
-          'color': AppColors.grey,
-          'icon': Icons.help_rounded,
-        };
+        return {'color': AppColors.grey, 'icon': Icons.help_rounded};
     }
   }
 }
