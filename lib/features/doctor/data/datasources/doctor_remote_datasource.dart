@@ -9,6 +9,27 @@ class DoctorRemoteDataSource {
 
   DoctorRemoteDataSource({required this.supabaseClient});
 
+  /// Update consultation status
+  Future<void> updateConsultationStatus(
+    String consultationId,
+    String status,
+  ) async {
+    try {
+      await supabaseClient
+          .from('consultations')
+          .update({
+            'consultation_status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', consultationId);
+
+      print('✅ Consultation $consultationId status updated to: $status');
+    } catch (e) {
+      print('❌ Failed to update consultation status: $e');
+      throw Exception('Failed to update consultation status: $e');
+    }
+  }
+
   /// Get doctor profile by doctor ID
   Future<DoctorModel> getDoctorProfile(String doctorId) async {
     try {

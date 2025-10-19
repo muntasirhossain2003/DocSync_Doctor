@@ -462,9 +462,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                               itemBuilder: (context, index) {
                                 final consultation = consultations[index];
                                 final patient = consultation['patient'];
+                                // Parse as UTC and convert to local time
                                 final dateTime = DateTime.parse(
                                   consultation['scheduled_time'],
-                                );
+                                ).toLocal();
 
                                 // Format date and time separately
                                 final months = [

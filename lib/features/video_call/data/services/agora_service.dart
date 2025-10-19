@@ -24,7 +24,10 @@ class AgoraService {
 
   /// Initialize Agora RTC Engine
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      print('✅ Agora already initialized');
+      return;
+    }
 
     try {
       if (kIsWeb) {
@@ -32,13 +35,16 @@ class AgoraService {
         // The SDK is loaded via script tag in index.html
         // We'll initialize the web client when joining a channel
         _isInitialized = true;
-        print('Agora Web SDK ready');
+        print('✅ Agora Web SDK ready');
       } else {
         // Native platform: Use agora_rtc_engine
+        print('🔧 Requesting camera and microphone permissions...');
         await _requestPermissions();
 
+        print('🔧 Creating Agora RTC Engine...');
         _engine = createAgoraRtcEngine();
 
+        print('🔧 Initializing Agora with App ID...');
         await _engine!.initialize(
           RtcEngineContext(
             appId: AgoraConfig.appId,
@@ -47,10 +53,12 @@ class AgoraService {
         );
 
         // Enable video module
+        print('🔧 Enabling video and audio...');
         await _engine!.enableVideo();
         await _engine!.enableAudio();
 
         // Set video configuration
+        print('🔧 Configuring video settings...');
         await _engine!.setVideoEncoderConfiguration(
           const VideoEncoderConfiguration(
             dimensions: VideoDimensions(width: 640, height: 480),
@@ -61,8 +69,10 @@ class AgoraService {
         );
 
         _isInitialized = true;
+        print('✅ Agora initialized successfully');
       }
     } catch (e) {
+      print('❌ Failed to initialize Agora: $e');
       throw Exception('Failed to initialize Agora: $e');
     }
   }
@@ -92,6 +102,8 @@ class AgoraService {
       throw Exception('Agora engine not initialized');
     }
 
+    print('🔗 Joining channel: $channelName with UID: $uid');
+
     if (kIsWeb) {
       // Web platform: Use Agora Web SDK JavaScript API
       await _joinChannelWeb(channelName, token, uid);
@@ -101,15 +113,22 @@ class AgoraService {
         throw Exception('Agora engine not initialized');
       }
 
-      await _engine!.joinChannel(
-        token: token,
-        channelId: channelName,
-        uid: uid,
-        options: const ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-          channelProfile: ChannelProfileType.channelProfileCommunication,
-        ),
-      );
+      try {
+        print('🔗 Calling engine.joinChannel...');
+        await _engine!.joinChannel(
+          token: token,
+          channelId: channelName,
+          uid: uid,
+          options: const ChannelMediaOptions(
+            clientRoleType: ClientRoleType.clientRoleBroadcaster,
+            channelProfile: ChannelProfileType.channelProfileCommunication,
+          ),
+        );
+        print('✅ Successfully called joinChannel');
+      } catch (e) {
+        print('❌ Error joining channel: $e');
+        throw Exception('Failed to join channel: $e');
+      }
     }
   }
 
