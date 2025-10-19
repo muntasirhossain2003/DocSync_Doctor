@@ -197,10 +197,62 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 
   /// Refresh profile
   Future<void> refresh() async {
-    final currentDoctor = state.value;
-    if (currentDoctor == null) return;
+    // Get the auth ID from Supabase directly instead of relying on state
+    final authId = Supabase.instance.client.auth.currentUser?.id;
+    if (authId == null) return;
 
-    await loadProfile(currentDoctor.userId);
+    // Keep the current data visible during refresh
+    final currentDoctor = state.value;
+
+    final result = await getDoctorProfileByAuthId(authId);
+
+    result.fold(
+      (error) {
+        // On error, keep the current state instead of showing error
+        // This way the user can still see their profile while refresh failed
+        if (currentDoctor != null) {
+          state = AsyncValue.data(currentDoctor);
+        } else {
+          state = AsyncValue.error(error, StackTrace.current);
+        }
+      },
+      (doctor) {
+        state = AsyncValue.data(doctor);
+
+        // Update online status if needed
+        if (doctor != null && !doctor.isOnline) {
+          updateOnlineStatus(doctor.id, true).then((result) {
+            result.fold(
+              (error) => print('Failed to set online status: $error'),
+              (success) {
+                if (success && mounted) {
+                  state = AsyncValue.data(doctor.copyWith(isOnline: true));
+                }
+              },
+            );
+          });
+        }
+
+        // Update availability if needed
+        if (doctor != null && doctor.hasAvailability && !doctor.isAvailable) {
+          updateAvailability(doctor.id, true).then((result) {
+            result.fold(
+              (error) => print('Failed to set availability: $error'),
+              (success) {
+                if (success && mounted) {
+                  final currentState = state.value;
+                  if (currentState != null) {
+                    state = AsyncValue.data(
+                      currentState.copyWith(isAvailable: true),
+                    );
+                  }
+                }
+              },
+            );
+          });
+        }
+      },
+    );
   }
 }
 
@@ -334,7 +386,8 @@ final getTotalEarningsUseCaseProvider = Provider((ref) {
 });
 
 // Doctor statistics notifier
-class DoctorStatisticsNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
+class DoctorStatisticsNotifier
+    extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
   final GetTotalPatientsCount getTotalPatientsCount;
   final GetScheduledConsultationsCount getScheduledConsultationsCount;
   final GetTotalEarnings getTotalEarnings;
@@ -350,7 +403,9 @@ class DoctorStatisticsNotifier extends StateNotifier<AsyncValue<Map<String, dyna
 
     try {
       final totalPatients = await getTotalPatientsCount(doctorId);
-      final scheduledConsultations = await getScheduledConsultationsCount(doctorId);
+      final scheduledConsultations = await getScheduledConsultationsCount(
+        doctorId,
+      );
       final totalEarnings = await getTotalEarnings(doctorId);
 
       state = AsyncValue.data({
@@ -366,10 +421,15 @@ class DoctorStatisticsNotifier extends StateNotifier<AsyncValue<Map<String, dyna
 
 // Doctor statistics provider
 final doctorStatisticsProvider =
-    StateNotifierProvider<DoctorStatisticsNotifier, AsyncValue<Map<String, dynamic>>>((ref) {
-  return DoctorStatisticsNotifier(
-    getTotalPatientsCount: ref.watch(getTotalPatientsCountUseCaseProvider),
-    getScheduledConsultationsCount: ref.watch(getScheduledConsultationsCountUseCaseProvider),
-    getTotalEarnings: ref.watch(getTotalEarningsUseCaseProvider),
-  );
-});
+    StateNotifierProvider<
+      DoctorStatisticsNotifier,
+      AsyncValue<Map<String, dynamic>>
+    >((ref) {
+      return DoctorStatisticsNotifier(
+        getTotalPatientsCount: ref.watch(getTotalPatientsCountUseCaseProvider),
+        getScheduledConsultationsCount: ref.watch(
+          getScheduledConsultationsCountUseCaseProvider,
+        ),
+        getTotalEarnings: ref.watch(getTotalEarningsUseCaseProvider),
+      );
+    });
