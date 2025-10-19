@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../features/auth/presentation/pages/log_in.dart';
 import '../../features/auth/presentation/pages/register.dart';
 import '../../features/auth/presentation/pages/reset_password.dart';
