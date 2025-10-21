@@ -712,58 +712,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         ),
                                       ),
                                       const SizedBox(height: AppSpacing.md),
-                                      if (consultation['consultation_type'] ==
-                                          'video')
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              context.push(
-                                                '/video-call/${consultation['id']}',
-                                                extra: {
-                                                  'patientId': patient['id'],
-                                                  'patientName':
-                                                      patient['full_name'],
-                                                  'patientImageUrl':
-                                                      patient['profile_picture_url'],
-                                                },
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  context.primaryColor,
-                                              foregroundColor:
-                                                  context.onPrimary,
-                                              elevation: 0,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 12,
-                                                  ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      AppRadius.md,
-                                                    ),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(
-                                                  Icons.video_call_rounded,
-                                                  size: 20,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'Join Call',
-                                                  style:
-                                                      AppTextStyles.buttonSmall,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
+
+                                      // Join call button - available within 30 minutes of scheduled time
+                                      _buildCallActionButton(
+                                        consultation: consultation,
+                                        patient: patient,
+                                        scheduledDateTime: dateTime,
+                                        context: context,
+                                      ),
                                     ],
                                   ),
                                 );
@@ -1314,5 +1270,176 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
     );
+  }
+
+  /// Build call action button based on time window
+  Widget _buildCallActionButton({
+    required Map<String, dynamic> consultation,
+    required Map<String, dynamic> patient,
+    required DateTime scheduledDateTime,
+    required BuildContext context,
+  }) {
+    final now = DateTime.now();
+    final timeDifference = scheduledDateTime.difference(now);
+    final consultationType = consultation['consultation_type'] as String;
+
+    // Check if we're within 30 minutes before the scheduled time and not past it
+    final canJoinCall =
+        timeDifference.inMinutes <= 30 && timeDifference.inMinutes >= 0;
+
+    // Different button states based on time and consultation type
+    if (consultationType == 'video' || consultationType == 'audio') {
+      if (canJoinCall) {
+        // Show active join button
+        return SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (consultationType == 'video') {
+                context.push(
+                  '/video-call/${consultation['id']}',
+                  extra: {
+                    'patientId': patient['id'],
+                    'patientName': patient['full_name'],
+                    'patientImageUrl': patient['profile_picture_url'],
+                  },
+                );
+              } else {
+                // Handle audio call
+                context.push(
+                  '/audio-call/${consultation['id']}',
+                  extra: {
+                    'patientId': patient['id'],
+                    'patientName': patient['full_name'],
+                    'patientImageUrl': patient['profile_picture_url'],
+                  },
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  consultationType == 'video'
+                      ? Icons.video_call_rounded
+                      : Icons.call_rounded,
+                  size: 20,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Join ${consultationType == 'video' ? 'Video' : 'Audio'} Call',
+                  style: AppTextStyles.buttonSmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else if (timeDifference.inMinutes > 30) {
+        // Show waiting button (too early)
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: AppColors.warning.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.schedule_rounded, size: 18, color: AppColors.warning),
+              const SizedBox(width: 6),
+              Text(
+                'Available in ${timeDifference.inMinutes} min',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Consultation time has passed
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.error.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: AppColors.error.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.access_time_filled_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Time Expired',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      // Chat consultation
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            context.push(
+              '/chat/${consultation['id']}',
+              extra: {
+                'patientId': patient['id'],
+                'patientName': patient['full_name'],
+                'patientImageUrl': patient['profile_picture_url'],
+              },
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.info,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.chat_rounded, size: 20),
+              const SizedBox(width: 6),
+              Text('Start Chat', style: AppTextStyles.buttonSmall),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }

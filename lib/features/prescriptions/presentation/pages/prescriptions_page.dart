@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_theme.dart';
 import '../providers/prescription_provider.dart';
+import 'prescription_detail_page.dart';
 
 class PrescriptionsPage extends ConsumerStatefulWidget {
   const PrescriptionsPage({super.key});
@@ -26,6 +28,11 @@ class _PrescriptionsPageState extends ConsumerState<PrescriptionsPage> {
   @override
   Widget build(BuildContext context) {
     final prescriptionsAsync = ref.watch(prescriptionsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+    final secondaryTextColor = isDark
+        ? Colors.grey[400]
+        : AppColors.textSecondary;
 
     print('🔄 PrescriptionsPage rebuilding...');
     print(
@@ -37,17 +44,54 @@ class _PrescriptionsPageState extends ConsumerState<PrescriptionsPage> {
     );
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Prescriptions'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        title: Text(
+          'Prescriptions',
+          style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  AppColors.border.withOpacity(0.3),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              print('🔄 Manual refresh triggered');
-              ref.invalidate(prescriptionsProvider);
-            },
-            tooltip: 'Refresh',
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              onPressed: () {
+                print('🔄 Manual refresh triggered');
+                ref.invalidate(prescriptionsProvider);
+              },
+              tooltip: 'Refresh',
+            ),
           ),
         ],
       ),
@@ -59,205 +103,262 @@ class _PrescriptionsPageState extends ConsumerState<PrescriptionsPage> {
           }
 
           if (prescriptions.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.medication_outlined,
-                    size: 80,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Prescriptions Yet',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+            return Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(AppRadius.xxl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.1),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color: AppColors.greyLight,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.medication_outlined,
+                            size: 64,
+                            color: AppColors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'No Prescriptions Yet',
+                          style: AppTextStyles.h2.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Prescriptions you create will appear here',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Prescriptions you create will appear here',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
+                ),
               ),
             );
           }
 
           return RefreshIndicator(
+            color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(prescriptionsProvider);
             },
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.md),
               itemCount: prescriptions.length,
               itemBuilder: (context, index) {
                 final prescription = prescriptions[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: InkWell(
-                    onTap: () {
-                      // TODO: Navigate to prescription detail
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.medical_information,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      prescription.diagnosis,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      DateFormat('MMM d, yyyy').format(
-                                        prescription.createdAt ??
-                                            DateTime.now(),
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: Colors.grey[400],
-                              ),
-                            ],
+                return Container(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.grey[800]!
+                          : AppColors.primary.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? Colors.black26
+                            : AppColors.primary.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PrescriptionDetailPage(
+                              prescription: prescription,
+                            ),
                           ),
-
-                          if (prescription.symptoms != null) ...[
-                            const SizedBox(height: 12),
-                            const Divider(),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Symptoms',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              prescription.symptoms!,
-                              style: const TextStyle(fontSize: 14),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-
-                          // Medications count
-                          if (prescription.medications.isNotEmpty) ...[
-                            const SizedBox(height: 12),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header with patient info
                             Row(
                               children: [
-                                Icon(
-                                  Icons.medication,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${prescription.medications.length} Medication(s)',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
+                                Container(
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
                                   ),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: AppColors.primary,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        prescription.patientName ??
+                                            'Unknown Patient',
+                                        style: AppTextStyles.h4.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        prescription.createdAt != null
+                                            ? DateFormat(
+                                                'MMM d, yyyy \'at\' h:mm a',
+                                              ).format(prescription.createdAt!)
+                                            : 'Date not available',
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: secondaryTextColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: secondaryTextColor,
+                                  size: 24,
                                 ),
                               ],
                             ),
-                          ],
 
-                          // Tests count
-                          if (prescription.tests.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.science_outlined,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${prescription.tests.length} Test(s) Recommended',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            const SizedBox(height: AppSpacing.md),
 
-                          // Follow-up date
-                          if (prescription.followUpDate != null) ...[
-                            const SizedBox(height: 12),
+                            // Diagnosis
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
+                              padding: const EdgeInsets.all(AppSpacing.sm),
                               decoration: BoxDecoration(
-                                color: Colors.orange[50],
-                                borderRadius: BorderRadius.circular(20),
+                                color: AppColors.success.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sm,
+                                ),
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.event,
-                                    size: 14,
-                                    color: Colors.orange[700],
+                                  const Icon(
+                                    Icons.medical_information_rounded,
+                                    color: AppColors.success,
+                                    size: 16,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Follow-up: ${DateFormat('MMM d, yyyy').format(prescription.followUpDate!)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.orange[700],
-                                      fontWeight: FontWeight.w500,
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: Text(
+                                      prescription.diagnosis,
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.success,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // Quick stats
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              children: [
+                                if (prescription.medications.isNotEmpty) ...[
+                                  _buildQuickStat(
+                                    Icons.medication_rounded,
+                                    '${prescription.medications.length} Med${prescription.medications.length == 1 ? '' : 's'}',
+                                    AppColors.warning,
+                                    secondaryTextColor,
+                                  ),
+                                  if (prescription.tests.isNotEmpty)
+                                    const SizedBox(width: AppSpacing.md),
+                                ],
+                                if (prescription.tests.isNotEmpty)
+                                  _buildQuickStat(
+                                    Icons.science_rounded,
+                                    '${prescription.tests.length} Test${prescription.tests.length == 1 ? '' : 's'}',
+                                    AppColors.info,
+                                    secondaryTextColor,
+                                  ),
+                                const Spacer(),
+                                if (prescription.followUpDate != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.sm,
+                                      vertical: AppSpacing.xs,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.warning.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.full,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.event_rounded,
+                                          size: 12,
+                                          color: AppColors.warning,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Follow-up',
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: AppColors.warning,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -266,28 +367,117 @@ class _PrescriptionsPageState extends ConsumerState<PrescriptionsPage> {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 60, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Error: $error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
+        loading: () => Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (error, stack) => Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.error.withOpacity(0.1),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline_rounded,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Error Loading Prescriptions',
+                      style: AppTextStyles.h2.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => ref.invalidate(prescriptionsProvider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.refresh_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Retry', style: AppTextStyles.button),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(prescriptionsProvider),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickStat(
+    IconData icon,
+    String text,
+    Color color,
+    Color? secondaryTextColor,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: secondaryTextColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -21,6 +21,13 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
+    // Add listener to refresh when tab changes
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        _refreshCurrentTab();
+      }
+    });
+
     // Load consultations after first frame when doctor is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final doctor = ref.read(doctorProfileProvider).value;
@@ -30,6 +37,32 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
         ref.read(cancelledConsultationsProvider.notifier).load(doctor.id);
       }
     });
+  }
+
+  void _refreshCurrentTab() {
+    final doctor = ref.read(doctorProfileProvider).value;
+    if (doctor?.id == null) return;
+
+    switch (_tabController.index) {
+      case 0: // Upcoming
+        ref.read(upcomingConsultationsProvider.notifier).refresh(doctor!.id);
+        break;
+      case 1: // Completed
+        ref.read(completedConsultationsProvider.notifier).refresh(doctor!.id);
+        break;
+      case 2: // Cancelled
+        ref.read(cancelledConsultationsProvider.notifier).refresh(doctor!.id);
+        break;
+    }
+  }
+
+  void refreshAllConsultations() {
+    final doctor = ref.read(doctorProfileProvider).value;
+    if (doctor == null || doctor.id.isEmpty) return;
+
+    ref.read(upcomingConsultationsProvider.notifier).refresh(doctor.id);
+    ref.read(completedConsultationsProvider.notifier).refresh(doctor.id);
+    ref.read(cancelledConsultationsProvider.notifier).refresh(doctor.id);
   }
 
   @override
@@ -42,55 +75,84 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          'Consultations',
+          style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              onPressed: refreshAllConsultations,
+              tooltip: 'Refresh All',
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  Container(
-                    height: 1,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          AppColors.border.withOpacity(0.3),
-                          Colors.transparent,
-                        ],
-                      ),
+            child: Column(
+              children: [
+                Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        AppColors.border.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    indicatorWeight: 3,
-                    labelStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                    tabs: const [
-                      Tab(
-                        icon: Icon(Icons.schedule_rounded, size: 20),
-                        text: 'Upcoming',
-                      ),
-                      Tab(
-                        icon: Icon(Icons.check_circle_rounded, size: 20),
-                        text: 'Completed',
-                      ),
-                      Tab(
-                        icon: Icon(Icons.cancel_rounded, size: 20),
-                        text: 'Cancelled',
-                      ),
-                    ],
+                ),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primary,
+                  indicatorWeight: 3,
+                  labelStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                  unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: const [
+                    Tab(
+                      icon: Icon(Icons.schedule_rounded, size: 20),
+                      text: 'Upcoming',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.check_circle_rounded, size: 20),
+                      text: 'Completed',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.cancel_rounded, size: 20),
+                      text: 'Cancelled',
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -135,17 +197,17 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                     case 'upcoming':
                       await ref
                           .read(upcomingConsultationsProvider.notifier)
-                          .load(doctor!.id);
+                          .refresh(doctor!.id);
                       break;
                     case 'completed':
                       await ref
                           .read(completedConsultationsProvider.notifier)
-                          .load(doctor!.id);
+                          .refresh(doctor!.id);
                       break;
                     case 'cancelled':
                       await ref
                           .read(cancelledConsultationsProvider.notifier)
-                          .load(doctor!.id);
+                          .refresh(doctor!.id);
                       break;
                   }
                 }
@@ -169,7 +231,8 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
-          error: (error, stack) => _buildErrorState(error.toString()),
+          error: (error, stack) =>
+              _buildErrorState(error.toString(), status, doctor),
         );
       },
     );
@@ -227,7 +290,7 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
     );
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _buildErrorState(String error, String status, dynamic doctor) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -271,6 +334,52 @@ class _ConsultationsPageState extends ConsumerState<ConsultationsPage>
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (doctor?.id != null) {
+                      switch (status) {
+                        case 'upcoming':
+                          ref
+                              .read(upcomingConsultationsProvider.notifier)
+                              .refresh(doctor!.id);
+                          break;
+                        case 'completed':
+                          ref
+                              .read(completedConsultationsProvider.notifier)
+                              .refresh(doctor!.id);
+                          break;
+                        case 'cancelled':
+                          ref
+                              .read(cancelledConsultationsProvider.notifier)
+                              .refresh(doctor!.id);
+                          break;
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.refresh_rounded, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Retry', style: AppTextStyles.button),
+                    ],
+                  ),
                 ),
               ),
             ],
