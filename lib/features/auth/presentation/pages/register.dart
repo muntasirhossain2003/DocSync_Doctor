@@ -101,7 +101,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         'role': role,
       }).select();
 
-      print('✅ User record created successfully: $userInsert');
+      print('✅ User record created successfully!');
 
       // Step 4: Verify the user record was created
       final verifyUser = await supabase
@@ -115,8 +115,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           'User record was not created. Please contact support or try again.',
         );
       }
-
-      print('✅ User record verified: $verifyUser');
 
       // Note: Doctor profile will be completed later through the app
 

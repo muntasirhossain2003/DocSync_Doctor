@@ -79,50 +79,28 @@ class DoctorProfileNotifier extends StateNotifier<AsyncValue<Doctor?>> {
 
   /// Load doctor profile by authentication ID
   Future<void> loadProfile(String authId) async {
-    state = const AsyncValue.loading();
+  if (!mounted) return;
+  state = const AsyncValue.loading();
 
+  try {
     final result = await getDoctorProfileByAuthId(authId);
 
     result.fold(
-      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (error) {
+        if (!mounted) return;
+        state = AsyncValue.error(error, StackTrace.current);
+      },
       (doctor) {
+        if (!mounted) return;
         state = AsyncValue.data(doctor);
-
-        // Automatically set doctor online when they load their profile (login)
-        if (doctor != null && !doctor.isOnline) {
-          updateOnlineStatus(doctor.id, true).then((result) {
-            result.fold(
-              (error) => print('Failed to set online status: $error'),
-              (success) {
-                if (success && mounted) {
-                  state = AsyncValue.data(doctor.copyWith(isOnline: true));
-                }
-              },
-            );
-          });
-        }
-
-        // Also set availability to true if doctor has availability hours
-        if (doctor != null && doctor.hasAvailability && !doctor.isAvailable) {
-          updateAvailability(doctor.id, true).then((result) {
-            result.fold(
-              (error) => print('Failed to set availability: $error'),
-              (success) {
-                if (success && mounted) {
-                  final currentState = state.value;
-                  if (currentState != null) {
-                    state = AsyncValue.data(
-                      currentState.copyWith(isAvailable: true),
-                    );
-                  }
-                }
-              },
-            );
-          });
-        }
       },
     );
+  } catch (e, st) {
+    if (!mounted) return;
+    state = AsyncValue.error(e.toString(), st);
   }
+}
+
 
   // Helper to check if still mounted
   bool get mounted => state != const AsyncValue.loading();
