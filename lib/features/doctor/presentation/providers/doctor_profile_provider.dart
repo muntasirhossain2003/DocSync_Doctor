@@ -287,6 +287,24 @@ class UpcomingConsultationsNotifier
       state = AsyncValue.error(e.toString(), st);
     }
   }
+
+  /// Refresh consultations without showing loading state
+  Future<void> refresh(String doctorId) async {
+    // Keep current data visible during refresh
+    final currentConsultations = state.value ?? [];
+
+    try {
+      final consultations = await getUpcomingConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      // On error, keep the current data instead of showing error
+      if (currentConsultations.isNotEmpty) {
+        state = AsyncValue.data(currentConsultations);
+      } else {
+        state = AsyncValue.error(e.toString(), st);
+      }
+    }
+  }
 }
 
 // Provider for upcoming consultations
@@ -328,6 +346,24 @@ class CompletedConsultationsNotifier
       state = AsyncValue.error(e.toString(), st);
     }
   }
+
+  /// Refresh consultations without showing loading state
+  Future<void> refresh(String doctorId) async {
+    // Keep current data visible during refresh
+    final currentConsultations = state.value ?? [];
+
+    try {
+      final consultations = await getCompletedConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      // On error, keep the current data instead of showing error
+      if (currentConsultations.isNotEmpty) {
+        state = AsyncValue.data(currentConsultations);
+      } else {
+        state = AsyncValue.error(e.toString(), st);
+      }
+    }
+  }
 }
 
 // Cancelled consultations notifier
@@ -346,6 +382,24 @@ class CancelledConsultationsNotifier
       state = AsyncValue.data(consultations);
     } catch (e, st) {
       state = AsyncValue.error(e.toString(), st);
+    }
+  }
+
+  /// Refresh consultations without showing loading state
+  Future<void> refresh(String doctorId) async {
+    // Keep current data visible during refresh
+    final currentConsultations = state.value ?? [];
+
+    try {
+      final consultations = await getCancelledConsultations(doctorId);
+      state = AsyncValue.data(consultations);
+    } catch (e, st) {
+      // On error, keep the current data instead of showing error
+      if (currentConsultations.isNotEmpty) {
+        state = AsyncValue.data(currentConsultations);
+      } else {
+        state = AsyncValue.error(e.toString(), st);
+      }
     }
   }
 }

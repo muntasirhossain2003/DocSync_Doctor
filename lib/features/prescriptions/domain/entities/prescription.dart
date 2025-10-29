@@ -93,6 +93,10 @@ class Prescription extends Equatable {
   final List<MedicalTest> tests;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  // Patient information
+  final String? patientName;
+  final String? patientEmail;
+  final String? patientPhone;
 
   const Prescription({
     this.id,
@@ -107,6 +111,9 @@ class Prescription extends Equatable {
     this.tests = const [],
     this.createdAt,
     this.updatedAt,
+    this.patientName,
+    this.patientEmail,
+    this.patientPhone,
   });
 
   @override
@@ -123,6 +130,9 @@ class Prescription extends Equatable {
     tests,
     createdAt,
     updatedAt,
+    patientName,
+    patientEmail,
+    patientPhone,
   ];
 
   Prescription copyWith({
@@ -138,6 +148,9 @@ class Prescription extends Equatable {
     List<MedicalTest>? tests,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? patientName,
+    String? patientEmail,
+    String? patientPhone,
   }) {
     return Prescription(
       id: id ?? this.id,
@@ -152,6 +165,9 @@ class Prescription extends Equatable {
       tests: tests ?? this.tests,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      patientName: patientName ?? this.patientName,
+      patientEmail: patientEmail ?? this.patientEmail,
+      patientPhone: patientPhone ?? this.patientPhone,
     );
   }
 }

@@ -52,21 +52,37 @@ class PrescriptionRemoteDataSource {
       final doctorId = doctorResponse['id'] as String;
       print('✅ Doctor ID: $doctorId');
 
-      // Get prescriptions
+      // Get prescriptions with patient information
       final response = await _supabase
           .from('prescriptions')
-          .select()
+          .select('''
+            *,
+            users!prescriptions_patient_id_fkey(
+              full_name,
+              email,
+              phone
+            )
+          ''')
           .eq('doctor_id', doctorId)
           .order('created_at', ascending: false);
 
       print('✅ Prescriptions query response: $response');
       print('✅ Number of prescriptions found: ${(response as List).length}');
 
-      final prescriptions = (response as List)
-          .map(
-            (json) => PrescriptionModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
+      final prescriptions = (response as List).map((json) {
+        final prescriptionData = json as Map<String, dynamic>;
+        final userData = prescriptionData['users'] as Map<String, dynamic>?;
+
+        // Add patient info to prescription data
+        final enhancedData = Map<String, dynamic>.from(prescriptionData);
+        if (userData != null) {
+          enhancedData['patient_name'] = userData['full_name'];
+          enhancedData['patient_email'] = userData['email'];
+          enhancedData['patient_phone'] = userData['phone'];
+        }
+
+        return PrescriptionModel.fromJson(enhancedData);
+      }).toList();
 
       // Load medications and tests for each prescription
       for (var i = 0; i < prescriptions.length; i++) {

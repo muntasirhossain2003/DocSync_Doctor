@@ -15,6 +15,9 @@ class PrescriptionModel extends Prescription {
     super.tests,
     super.createdAt,
     super.updatedAt,
+    super.patientName,
+    super.patientEmail,
+    super.patientPhone,
   });
 
   factory PrescriptionModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +39,10 @@ class PrescriptionModel extends Prescription {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      // Patient information from joined user data
+      patientName: json['patient_name'] as String?,
+      patientEmail: json['patient_email'] as String?,
+      patientPhone: json['patient_phone'] as String?,
       // Note: medications and tests are loaded separately
     );
   }
@@ -69,6 +76,9 @@ class PrescriptionModel extends Prescription {
     List<MedicalTest>? tests,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? patientName,
+    String? patientEmail,
+    String? patientPhone,
   }) {
     return PrescriptionModel(
       id: id ?? this.id,
@@ -83,6 +93,9 @@ class PrescriptionModel extends Prescription {
       tests: tests ?? this.tests,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      patientName: patientName ?? this.patientName,
+      patientEmail: patientEmail ?? this.patientEmail,
+      patientPhone: patientPhone ?? this.patientPhone,
     );
   }
 }
