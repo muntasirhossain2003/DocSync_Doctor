@@ -1,9 +1,14 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/services/image_upload_service.dart';
 import '../../domain/entities/doctor.dart';
 import '../providers/doctor_profile_provider.dart';
 
@@ -18,6 +23,12 @@ class EditDoctorProfilePage extends ConsumerStatefulWidget {
 class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isUploadingImage = false;
+
+  // Image upload
+  XFile? _selectedImage;
+  String? _currentProfilePictureUrl;
+  late ImageUploadService _imageUploadService;
 
   // Controllers
   late TextEditingController _fullNameController;
@@ -29,9 +40,23 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
   late TextEditingController _bioController;
   late TextEditingController _experienceController;
 
+  // Availability schedule state
+  Map<String, Map<String, dynamic>> _availabilitySchedule = {
+    'monday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'tuesday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'wednesday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'thursday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'friday': {'start': '09:00', 'end': '17:00', 'available': true},
+    'saturday': {'start': '09:00', 'end': '13:00', 'available': true},
+    'sunday': {'start': '00:00', 'end': '00:00', 'available': false},
+  };
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize image upload service
+    _imageUploadService = ImageUploadService(Supabase.instance.client);
 
     // Initialize controllers
     _fullNameController = TextEditingController();
@@ -56,6 +81,21 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
           _consultationFeeController.text = doctor.consultationFee.toString();
           _bioController.text = doctor.bio ?? '';
           _experienceController.text = doctor.experience?.toString() ?? '';
+
+          // Load current profile picture
+          _currentProfilePictureUrl = doctor.profilePictureUrl;
+
+          // Load availability schedule if exists
+          if (doctor.availability != null && doctor.availability!.isNotEmpty) {
+            setState(() {
+              _availabilitySchedule = Map<String, Map<String, dynamic>>.from(
+                doctor.availability!.map(
+                  (key, value) =>
+                      MapEntry(key, Map<String, dynamic>.from(value as Map)),
+                ),
+              );
+            });
+          }
         } else {
           // Load user data from users table
           _loadUserData();
@@ -78,10 +118,45 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
       setState(() {
         _fullNameController.text = userData['full_name'] ?? '';
         _phoneController.text = userData['phone'] ?? '';
+        _currentProfilePictureUrl = userData['profile_picture_url'];
       });
     } catch (e) {
       print('Error loading user data: $e');
     }
+  }
+
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final image = await _imageUploadService.pickImageFromGallery();
+                if (image != null) {
+                  setState(() => _selectedImage = image);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final image = await _imageUploadService.pickImageFromCamera();
+                if (image != null) {
+                  setState(() => _selectedImage = image);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -110,6 +185,65 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
         throw Exception('User not authenticated');
       }
 
+      // Upload profile image if selected
+      String? uploadedImageUrl;
+      if (_selectedImage != null) {
+        setState(() => _isUploadingImage = true);
+        try {
+          // Get user ID for the upload path
+          final userRecord = await Supabase.instance.client
+              .from('users')
+              .select('id')
+              .eq('auth_id', authId)
+              .single();
+          final userId = userRecord['id'] as String;
+
+          uploadedImageUrl = await _imageUploadService.uploadProfileImage(
+            _selectedImage!,
+            userId,
+          );
+
+          // Delete old image if exists
+          if (_currentProfilePictureUrl != null &&
+              _currentProfilePictureUrl!.isNotEmpty) {
+            await _imageUploadService.deleteProfileImage(
+              _currentProfilePictureUrl!,
+            );
+          }
+        } catch (e) {
+          print('Error uploading image: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image upload failed: ${e.toString()}')),
+            );
+          }
+        } finally {
+          setState(() => _isUploadingImage = false);
+        }
+      }
+
+      // Update profile picture in users table if uploaded
+      if (uploadedImageUrl != null) {
+        try {
+          final userRecord = await Supabase.instance.client
+              .from('users')
+              .select('id')
+              .eq('auth_id', authId)
+              .single();
+          final userId = userRecord['id'] as String;
+
+          await Supabase.instance.client
+              .from('users')
+              .update({
+                'profile_picture_url': uploadedImageUrl,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', userId);
+        } catch (e) {
+          print('Error updating profile picture in users table: $e');
+        }
+      }
+
       // Create updated doctor object
       Doctor updatedDoctor;
 
@@ -129,6 +263,8 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
               ? null
               : _bioController.text.trim(),
           experience: int.tryParse(_experienceController.text),
+          availability: _availabilitySchedule,
+          // Don't pass profilePictureUrl to Doctor entity since doctors table doesn't have it
         );
 
         final success = await ref
@@ -171,6 +307,8 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
               ? null
               : _bioController.text.trim(),
           experience: int.tryParse(_experienceController.text),
+          availability: _availabilitySchedule,
+          // Don't pass profilePictureUrl to Doctor entity since doctors table doesn't have it
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -229,32 +367,61 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Profile picture section (placeholder for now)
+              // Profile picture section
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: AppColors.greyLight,
-                      child: Icon(
-                        Icons.person,
-                        size: 50,
-                        color: AppColors.grey,
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppColors.greyLight,
+                        backgroundImage: _selectedImage != null
+                            ? FileImage(File(_selectedImage!.path))
+                            : (_currentProfilePictureUrl != null &&
+                                          _currentProfilePictureUrl!.isNotEmpty
+                                      ? CachedNetworkImageProvider(
+                                          _currentProfilePictureUrl!,
+                                        )
+                                      : null)
+                                  as ImageProvider?,
+                        child:
+                            _selectedImage == null &&
+                                (_currentProfilePictureUrl == null ||
+                                    _currentProfilePictureUrl!.isEmpty)
+                            ? Icon(
+                                Icons.person,
+                                size: 50,
+                                color: AppColors.grey,
+                              )
+                            : null,
                       ),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          size: 20,
-                          color: Colors.white,
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(AppSpacing.xs),
+                          child: _isUploadingImage
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                         ),
                       ),
                     ),
@@ -410,6 +577,21 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Availability Schedule Section
+              Text('Availability Schedule', style: AppTextStyles.h3),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Set your available hours for each day',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              ..._buildAvailabilitySchedule(),
+
               const SizedBox(height: AppSpacing.xl),
 
               // Save button
@@ -435,5 +617,137 @@ class _EditDoctorProfilePageState extends ConsumerState<EditDoctorProfilePage> {
         ),
       ),
     );
+  }
+
+  /// Build availability schedule widgets
+  List<Widget> _buildAvailabilitySchedule() {
+    final days = [
+      {'key': 'monday', 'label': 'Monday'},
+      {'key': 'tuesday', 'label': 'Tuesday'},
+      {'key': 'wednesday', 'label': 'Wednesday'},
+      {'key': 'thursday', 'label': 'Thursday'},
+      {'key': 'friday', 'label': 'Friday'},
+      {'key': 'saturday', 'label': 'Saturday'},
+      {'key': 'sunday', 'label': 'Sunday'},
+    ];
+
+    return days.map((day) {
+      final dayKey = day['key'] as String;
+      final dayLabel = day['label'] as String;
+      final daySchedule = _availabilitySchedule[dayKey]!;
+      final isAvailable = daySchedule['available'] as bool;
+
+      return Card(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      dayLabel,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    isAvailable ? 'Available' : 'Closed',
+                    style: TextStyle(
+                      color: isAvailable ? AppColors.success : AppColors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Switch(
+                    value: isAvailable,
+                    onChanged: (value) {
+                      setState(() {
+                        _availabilitySchedule[dayKey]!['available'] = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              if (isAvailable) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(dayKey, 'start'),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Start Time',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                          ),
+                          child: Text(
+                            daySchedule['start'] as String,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(dayKey, 'end'),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'End Time',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                          ),
+                          child: Text(
+                            daySchedule['end'] as String,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  /// Select time for availability
+  Future<void> _selectTime(String dayKey, String timeType) async {
+    final currentTime = _availabilitySchedule[dayKey]![timeType] as String;
+    final timeParts = currentTime.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.parse(timeParts[0]),
+      minute: int.parse(timeParts[1]),
+    );
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _availabilitySchedule[dayKey]![timeType] =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
   }
 }

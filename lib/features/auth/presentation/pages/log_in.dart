@@ -20,6 +20,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool loading = false;
   bool sendingReset = false;
   bool isHovering = false;
+  bool obscure = true;
 
   @override
   void dispose() {
@@ -29,6 +30,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> login() async {
+    if (!mounted) return;
     setState(() => loading = true);
     final supabase = ref.read(supabaseClientProvider);
 
@@ -113,18 +115,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       backgroundColor: AppColors.light_blue,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Add a small top margin so the logo sits away from the status/bar
+              const SizedBox(height: 16),
               SizedBox(
                 height: 180,
                 child: Image.asset(
-                  '../../../../../assets/login_logo.png',
+                  'assets/login_logo.png',
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               const Text(
                 'Log In',
                 style: TextStyle(
@@ -155,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               // Password
               TextField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: obscure,
                 decoration: InputDecoration(
                   filled: true,
                   floatingLabelBehavior: FloatingLabelBehavior.never,
@@ -165,6 +169,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscure = !obscure;
+                      });
+                    },
                   ),
                 ),
               ),
